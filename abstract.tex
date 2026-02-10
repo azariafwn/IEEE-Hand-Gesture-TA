@@ -1,0 +1,7 @@
+\begin{abstract}
+While the Internet of Things (IoT) has accelerated smart home adoption, conventional interaction methods like mobile applications and voice commands remain limited. Hand gesture control offers an intuitive, contactless alternative, leveraging advancements in edge computing. However, deploying complex Deep Learning models for real-time dynamic gesture recognition on resource-constrained edge devices poses significant computational challenges. This study addresses these challenges by developing a distributed control system integrating a Raspberry Pi 5 for processing and ESP8266 units for wireless actuation. A Long Short-Term Memory (LSTM) model was trained on a 10-class dynamic gesture dataset and optimized via 8-bit quantization into TensorFlow Lite format to maximize edge efficiency. Experimental results demonstrate that this optimization strategy yields an average processing speed of 23.83 FPS with an inference latency under 30 ms. Although the average total system response time of 134.52 ms is sufficient for seamless human-computer interaction, analysis reveals that wireless network communication (Wi-Fi) constitutes the primary bottleneck, accounting for over 75\% of total latency due to protocol-inherent jitter and interference.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Smart Home Control, Dynamic Hand Gestures, LSTM, Raspberry Pi 5, Edge Computing, TensorFlow Lite.
+\end{IEEEkeywords}

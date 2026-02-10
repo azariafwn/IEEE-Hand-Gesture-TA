@@ -1,0 +1,70 @@
+\section{Result}
+This section presents the experimental results evaluating the proposed system's performance. The evaluation focuses on three key aspects: model training performance, edge computing efficiency on Raspberry Pi 5, and real-time system responsiveness.
+
+\begin{figure}[!t]
+    \centering
+    % Ganti nama file sesuai file kamu
+    \includegraphics[width=\columnwidth]{fig/grafik_akurasi.png}
+    \caption{Model training performance evaluation over 50 epochs: Model Accuracy demonstrating rapid convergence.}
+    \label{fig:training_accuracy}
+\end{figure}
+
+\begin{figure}[!t]
+    \centering
+    % Ganti nama file sesuai file kamu
+    \includegraphics[width=\columnwidth]{fig/grafik_loss.png}
+    \caption{Model training performance evaluation over 50 epochs: Model Loss showing minimal overfitting.}
+    \label{fig:training_loss}
+\end{figure}
+
+\subsection{Model Training Performance}
+The LSTM model was trained on a dataset of 10 dynamic gestures collected from 8 subjects. Fig. \ref{fig:training_accuracy} illustrates the training and validation accuracy over 50 epochs, while Fig. \ref{fig:training_loss} shows the corresponding loss curves.
+\begin{enumerate}
+    \item \textit{Convergence:} As seen in Fig. \ref{fig:training_accuracy}, the model achieved convergence rapidly, reaching $>$90\% accuracy within the first 10 epochs.
+    \item \textit{Final Accuracy:} The baseline Keras model achieved a validation accuracy of 99\%, demonstrating excellent generalization without significant overfitting, as indicated by the minimal gap between training and validation loss in Fig. \ref{fig:training_loss}.
+\end{enumerate}
+
+
+\subsection{Edge Optimization (Quantization)}
+To enable real-time inference on the Raspberry Pi 5, the model was optimized using TensorFlow Lite (TFLite) 8-bit quantization. Table \ref{tab:optimization_comparison} compares the baseline (FP32) and optimized (INT8) models.
+
+\begin{table}[htbp]
+\caption{Comparison of Model Resources and Performance: Baseline vs. Optimized}
+\label{tab:optimization_comparison}
+\centering
+\begin{tabular}{l c c c}
+\hline
+\hline 
+\textbf{Metric} & \textbf{Keras (FP32)} & \textbf{TFLite (INT8)} & \textbf{Impact} \\
+\hline
+Model Size & 2252 KB & 233 KB & \textbf{89.7\% Reduction} \\
+RAM Usage & $\approx$ 47.22 MB & $\approx$ 1.07 MB & \textbf{97.7\% Reduction} \\
+Accuracy & 98.75\% & 98.50\% & -0.25\% Loss \\
+\hline
+\end{tabular}
+\end{table}
+
+The quantization process yielded significant efficiency gains. As shown in Table \ref{tab:optimization_comparison}, the model size was reduced by 89.7\%, validating the storage efficiency of 8-bit integer weights. More importantly, runtime memory consumption dropped drastically by 97.7\%. This massive reduction is attributed to the TFLite interpreter's lightweight architecture, which eliminates the overhead of the full TensorFlow framework and utilizes efficient memory mapping. This ensures stable operation on the edge device, preserving system resources for other concurrent processes such as video buffering and network communication, with only a negligible accuracy loss of 0.25\%.
+
+
+\subsection{Real-time System Performance}
+The system's end-to-end performance was evaluated under optimal conditions (50 cm distance, normal lighting). The statistical results over 800 trials are summarized in Table \ref{tab:performance_stats}.
+
+\begin{table}[htbp]
+\caption{Statistical Summary of Real-Time Performance Metrics}
+\label{tab:performance_stats}
+\centering
+\begin{tabular}{l c c c c}
+\hline
+\hline
+\textbf{Metric} & \textbf{Min} & \textbf{Max} & \textbf{Mean} & \textbf{$\sigma$ (Std Dev)} \\
+\hline
+Processing Speed (FPS) & 10.55 & 29.48 & \textbf{23.83} & 1.87 \\
+Edge Latency (ms) & 20.96 & 171.15 & \textbf{28.82} & 4.93 \\
+Network Latency (ms) & 10.10 & 601.96 & \textbf{105.71} & 64.15 \\
+Total Latency (ms) & 31.06 & 656.16 & \textbf{134.52} & 64.37 \\
+\hline
+\end{tabular}
+\end{table}
+
+The system demonstrates a robust processing capability with an average speed of 23.83 FPS and a low edge inference latency of 28.82 ms, confirming the efficacy of the TFLite optimization. While the mean total response time of 134.52 ms falls within the instantaneous perception range ($<$200 ms) \cite{Attig_LatencyGuidelines}, the network latency exhibits significant variability ($\sigma=64.15$ ms) with a maximum delay reaching 601 ms. This indicates that while edge processing is deterministic, the Wi-Fi transmission introduces stochastic jitter which serves as the primary bottleneck in the distributed architecture \cite{Gore_PDV}.

@@ -1,0 +1,25 @@
+\section{Discussion}
+This section analyzes the impact of environmental variations and identifying system bottlenecks.
+
+
+\subsection{Impact of Environmental Variations}
+To validate the system's robustness in real-world scenarios, comprehensive testing was conducted across varying environmental conditions. Specifically, the evaluation covered three user distances (30 cm, 50 cm, and 70 cm), three lighting intensities (Dim $\approx$30 Lux, Normal $\approx$150 Lux, and Bright $\approx$400 Lux), and two camera resolutions (480p and 720p).
+
+The experimental results reveal that distance is the most critical factor affecting system performance, while lighting has a negligible impact.
+
+\begin{itemize}
+    \item Optimal Range: At an intermediate distance of 50 cm, the system achieved near-perfect accuracy ($\approx$99\%). This distance offers the optimal trade-off where the hand is large enough for feature extraction but stays within the camera's field of view.
+    \item Performance Drop: Accuracy dropped slightly at 70 cm due to lower resolution of hand landmarks, causing confusion between similar gestures (e.g., 'Three' vs 'Four' fingers).
+    \item Lighting Independence: Interestingly, lighting conditions had minimal impact on accuracy. The system maintained high performance even in dim environments (30 Lux). This robustness is attributed to the MediaPipe framework, which relies on structural landmark detection rather than raw pixel intensity, making it highly resilient to poor illumination compared to traditional color-based segmentation methods.
+    \item Resolution Trade-off: While 720p resolution provided marginal accuracy improvements at longer distances, 480p was identified as the optimal configuration. It provided sufficient visual detail for the LSTM model while maintaining a significantly lower computational load for the Raspberry Pi.
+\end{itemize}
+
+
+\subsection{Latency Bottleneck Analysis}
+A breakdown of the total latency reveals a significant finding:
+\begin{itemize}
+    \item Edge Efficiency: The optimized LSTM model on Raspberry Pi 5 is highly efficient, contributing only  21.42\% (28.82 ms) to the total latency.
+    \item Network Constraint: The Wi-Fi communication between Raspberry Pi and ESP8266 accounts for the remaining 78.58\% (105.71 ms). The high variance in network latency (jitter) suggests that standard HTTP protocols over Wi-Fi are the primary bottleneck for responsiveness, rather than the edge processing capability.
+\end{itemize}
+
+

@@ -1,0 +1,65 @@
+\section{Proposed Method}
+
+This research employs an experimental approach to develop and evaluate a distributed smart home control system. The proposed system integrates edge-based deep learning for gesture recognition with wireless IoT actuators.
+
+
+\subsection{System Architecture}
+The system is designed with a distributed architecture consisting of two main zones: the \textit{User Zone} and the \textit{Device Zone}, connected via a local Wi-Fi network, as shown in Figure \ref{fig:skenario_sistem}. The comprehensive information flow between these components is illustrated in Fig. \ref{fig:system_architecture}.
+
+The data propagation process can be divided into three sequential stages:
+
+\begin{enumerate}
+    \item \textbf{Data Processing (User Zone):} The process initiates when the user performs a gesture in front of the camera. The Raspberry Pi 5 captures the video stream and processes it through a sequential pipeline:
+    \begin{itemize}
+        \item \textit{MediaPipe:} Extracts 21 3D hand landmarks from raw video frames \cite{google2025handlandmarks}.
+        \item \textit{TFLite Interpreter:} Performs inference using the optimized LSTM model to classify the gesture (e.g., \texttt{AKSI\_ON} or \texttt{DEVICE\_1}).
+        \item \textit{State Machine Logic:} Processes the classification result to determine the final combination command (e.g., "Turn On Device 1") and translates it into a specific HTTP GET request (e.g., \texttt{GET http://<Target\_IP>/on}).
+    \end{itemize}
+
+    \item \textbf{Data Transmission (Wi-Fi Network):} The generated HTTP request is transmitted wirelessly via the local Wi-Fi network, which acts as the communication bridge between the central processing unit and the distributed actuators.
+
+    \item \textbf{Command Execution (Device Zone):} The target ESP8266 node receives the HTTP packet, parses the command, and toggles the logic state (HIGH/LOW) of its GPIO pin. This signal activates the relay module, physically switching the 220V AC load to power the connected electronic appliance.
+\end{enumerate}
+
+\begin{figure}[!t]
+    \centering
+    % Ganti nama file sesuai file kamu
+    \includegraphics[width=0.8\columnwidth]{fig/skenario-sistem.jpg} 
+    \caption{System implementation scenario illustrating the distributed architecture between the User Zone (Processing Unit) and Device Zone (Actuator Unit).}
+    \label{fig:skenario_sistem}
+\end{figure}
+
+
+\subsection{IoT Actuator Unit Design}
+
+The actuator nodes are designed to be standalone and compact, as shown in the schematic in Fig. \ref{fig:schematic}. Each unit integrates a Hi-Link HLK-PM01 AC-DC converter (220V to 5V) to power the ESP8266 and relay directly from the mains, eliminating the need for external adapters. The circuit employs an optocoupler-isolated relay to ensure safety between the low-voltage control logic (3.3V) and the high-voltage AC load \cite{regent_optocoupler}.
+
+To ensure safety and aesthetics, a custom 3D-printed enclosure was designed using Autodesk Fusion 360 and fabricated with PLA+ filament. The enclosure features a snap-fit mechanism to secure components without screws and includes ventilation to prevent overheating. The firmware on the ESP8266 is programmed to function as a lightweight web server that toggles the GPIO state based on received HTTP requests.
+
+\begin{figure}[!t]
+    \centering
+    % Ganti nama file sesuai file kamu
+    \includegraphics[width=\columnwidth]{fig/skematik.png}
+    \caption{Schematic diagram of the IoT actuator node showing galvanic isolation between AC load and DC control logic.}
+    \label{fig:schematic}
+\end{figure}
+
+\begin{figure*}[!t]
+    \centering
+    % Ganti nama file sesuai file kamu
+    \includegraphics[width=0.8\textwidth]{fig/diagram-alur-data.png} 
+    \caption{Data flow diagram of the proposed distributed control system illustrating the process from gesture input to actuator response.}
+    \label{fig:system_architecture}
+\end{figure*}
+
+\subsection{Gesture Recognition Pipeline}
+
+The core of the system is the gesture recognition pipeline running on the Raspberry Pi 5. The process involves three stages:
+\begin{enumerate}
+    \item \textit{Data Acquisition \& Preprocessing:} The system captures video at 30 FPS. MediaPipe Hands is used to extract 21 3D hand landmarks per frame. These coordinates are normalized to ensure invariance to hand position and scale.
+    \item \textit{Deep Learning Model (LSTM):} A custom Long Short-Term Memory (LSTM) network is designed to classify dynamic gestures. The architecture consists of three LSTM layers (64, 128, and 64 units) followed by Dense layers. The model is trained on a dataset of 10 dynamic gestures, divided into Selection Gestures (pointing 1-4 fingers) and Action Gestures (Open \& Close palm).
+    \item \textit{Edge Optimization:} To achieve real-time performance on the Raspberry Pi, the trained Keras model is converted to TensorFlow Lite (TFLite) format with 8-bit integer quantization \cite{tflite_quantization_docs}. This reduces model size and inference latency significantly compared to the original FP32 model.
+\end{enumerate}
+
+\subsection{Control Logic \& Integration}
+The software stack on the Raspberry Pi is containerized using Docker to ensure reproducibility and dependency isolation \cite{docker2024overview}. The control logic implements a State Machine to prevent accidental triggers. A command is executed only when a valid sequence is detected: a Selection Gesture (selecting a specific device) followed immediately by an Action Gesture (turning it ON/OFF). This logic minimizes false positives and enhances user experience.

@@ -20,8 +20,8 @@ This section presents the experimental results evaluating the proposed system's 
 \subsection{Model Training Performance}
 The LSTM model was trained on a dataset of 10 dynamic gestures collected from 8 subjects. Fig. \ref{fig:training_accuracy} illustrates the training and validation accuracy over 50 epochs, while Fig. \ref{fig:training_loss} shows the corresponding loss curves.
 \begin{enumerate}
-    \item \textit{Convergence:} As seen in Fig. \ref{fig:training_accuracy}, the model achieved convergence rapidly, reaching $>$90\% accuracy within the first 10 epochs.
-    \item \textit{Final Accuracy:} The baseline Keras model achieved a validation accuracy of 99\%, demonstrating excellent generalization without significant overfitting, as indicated by the minimal gap between training and validation loss in Fig. \ref{fig:training_loss}.
+    \item Convergence: As seen in Fig. \ref{fig:training_accuracy}, the model achieved convergence rapidly, reaching $>$90\% accuracy within the first 10 epochs.
+    \item Final Accuracy: The baseline Keras model achieved a validation accuracy of 99\%, demonstrating excellent generalization without significant overfitting, as indicated by the minimal gap between training and validation loss in Fig. \ref{fig:training_loss}.
 \end{enumerate}
 
 
@@ -48,7 +48,7 @@ The quantization process yielded significant efficiency gains. As shown in Table
 
 
 \subsection{Real-time System Performance}
-The system's end-to-end performance was evaluated under optimal conditions (50 cm distance, normal lighting). The statistical results over 800 trials are summarized in Table \ref{tab:performance_stats}.
+The system's end-to-end performance was evaluated under optimal conditions (50 cm distance, normal lighting). The statistical results over 2100 trials are summarized in Table \ref{tab:performance_stats}.
 
 \begin{table}[htbp]
 \caption{Statistical Summary of Real-Time Performance Metrics}

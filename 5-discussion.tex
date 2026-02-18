@@ -3,49 +3,14 @@ This section analyzes the impact of environmental variations and identifying sys
 
 
 \subsection{Impact of Environmental Variations}
-To validate the system's robustness in real-world scenarios, comprehensive testing was conducted across varying environmental conditions, specifically focusing on user distance, lighting intensity, and camera resolution. The detailed experimental results regarding accuracy and latency for each scenario are summarized in Table \ref{tab:env_variations}.
+The experimental results, summarized in Table \ref{tab:env_variations}, reveal that while the system is robust across most conditions, specific configurations yield optimal performance trade-offs. Regarding user distance, the system achieved its peak accuracy of 99.6\% at an intermediate range of 50 cm. This distance acts as a "sweet spot" where the hand region is sufficiently large for precise landmark extraction without exceeding the camera's field of view. Furthermore, performance remained highly stable even at 70 cm, with only a minor accuracy drop to 98.6\%, indicating that the model generalizes well across varying user positions. In terms of illumination, the system demonstrated remarkable resilience to lighting variations. Even in dim conditions ($\approx$30 Lux), the accuracy remained high at 98.3\%, closely matching the 99.7\% achieved under normal lighting. This robustness is directly attributed to the MediaPipe framework, which relies on structural landmark geometry rather than raw pixel intensity, making it vastly superior to traditional color-based segmentation in low-light scenarios.
 
-\begin{table}[htbp]
-\caption{System Robustness Analysis: Impact of Environmental Variations on Performance}
-\label{tab:env_variations}
-\centering
-\begin{tabular}{l c c c c}
-\hline
-\hline
-\textbf{Condition} & \textbf{Value} & \textbf{Accuracy (\%)} & \textbf{Inference (ms)} & \textbf{Speed (FPS)} \\
-\hline
-\multicolumn{5}{l}{\textit{A. Impact of User Distance}} \\
-Near & 30 cm & 99.0\% & 29.10 & 23.84 \\
-\textbf{Optimal} & \textbf{50 cm} & \textbf{99.6\%} & \textbf{28.62} & \textbf{23.76} \\
-Far & 70 cm & 98.6\% & 28.73 & 23.87 \\
-\hline
-\multicolumn{5}{l}{\textit{B. Impact of Lighting Intensity}} \\
-Dim & $\approx$ 30 Lux & 98.3\% & 28.85 & 23.96 \\
-Normal & $\approx$ 150 Lux & 99.7\% & 28.56 & 23.83 \\
-Bright & $\approx$ 400 Lux & 99.2\% & 29.04 & 23.68 \\
-\hline
-\multicolumn{5}{l}{\textit{C. Impact of Camera Resolution}} \\
-\textbf{Low Res} & \textbf{480p} & \textbf{98.7\%} & \textbf{27.19} & \textbf{25.04} \\
-High Res & 720p & 99.4\% & 30.45 & 22.61 \\ % Drop FPS di sini jadi argumen kuat!
-\hline
-\end{tabular}
-\end{table}
-
-The experimental results, summarized in Table \ref{tab:env_variations}, reveal that while the system is robust across most conditions, specific configurations yield optimal performance trade-offs.
-
-\begin{itemize}
-    \item \textbf{Optimal Range:} At an intermediate distance of 50 cm, the system achieved its peak accuracy of \textbf{99.6\%}. This distance proves to be the "sweet spot" where the hand region is sufficiently large for precise landmark extraction without exceeding the camera's field of view.
-    \item \textbf{Distance Robustness:} Performance remained stable even at 70 cm, with only a minor accuracy drop to \textbf{98.6\%}. This indicates that the model generalizes well across varying user positions, maintaining reliable operation even when the user is not in the immediate proximity of the camera.
-    \item \textbf{Lighting Independence:} The system demonstrated remarkable resilience to lighting variations. Even in dim conditions ($\approx$30 Lux), the accuracy remained high at \textbf{98.3\%}, only slightly lower than the 99.7\% achieved under normal lighting. This robustness is attributed to the MediaPipe framework, which relies on structural landmark geometry rather than raw pixel intensity, making it superior to traditional color-based segmentation in low-light scenarios.
-    \item \textbf{Resolution Trade-off:} The comparison between 480p and 720p presents a critical trade-off between precision and fluidity. While 720p offered a higher accuracy of \textbf{99.4\%}, it increased the computational load, dropping the processing speed to \textbf{22.61 FPS}. Conversely, the 480p resolution achieved a smoother performance of \textbf{25.04 FPS} with a highly competitive accuracy of \textbf{98.7\%}. Consequently, 480p is identified as the optimal configuration, prioritizing interaction fluidity (higher FPS) and lower latency (27.19 ms) over a marginal gain in accuracy.
-\end{itemize}
+Beyond spatial and lighting factors, the choice of camera resolution presented a critical trade-off between precision and fluidity. While the 720p resolution offered a marginally higher accuracy of 99.4\%, it significantly increased the computational load on the edge device, dropping the processing speed to 22.61 FPS. Conversely, the 480p resolution achieved a smoother real-time performance of 25.04 FPS while maintaining a highly competitive accuracy of 98.7\%. Consequently, 480p is identified as the optimal system configuration, prioritizing interaction fluidity and lower inference latency (27.19 ms) over negligible gains in classification accuracy.
 
 
 \subsection{Latency Bottleneck Analysis}
-A breakdown of the total latency reveals a significant finding:
-\begin{itemize}
-    \item Edge Efficiency: The optimized LSTM model on Raspberry Pi 5 is highly efficient, contributing only  21.42\% (28.82 ms) to the total latency.
-    \item Network Constraint: The Wi-Fi communication between Raspberry Pi and ESP8266 accounts for the remaining 78.58\% (105.71 ms). The high variance in network latency (jitter) suggests that standard HTTP protocols over Wi-Fi are the primary bottleneck for responsiveness, rather than the edge processing capability.
-\end{itemize}
+A breakdown of the total latency reveals a significant finding regarding the system's performance bottlenecks. The optimized LSTM model deployed on the Raspberry Pi 5 demonstrates high efficiency, contributing a mere 21.42\% (28.82 ms) to the overall latency. Conversely, the wireless network constraint—specifically the Wi-Fi communication between the Raspberry Pi and the ESP8266 node—accounts for the vast majority of the delay, occupying the remaining 78.58\% (105.71 ms). This disproportionate distribution, coupled with the high variance in network transmission (jitter), firmly establishes that the standard HTTP protocol over a local Wi-Fi network is the primary bottleneck for system responsiveness, completely overshadowing any limitations of the edge processing capability.
 
 
+\subsection{System Limitations and Future Directions}
+While the proposed architecture demonstrates a successful proof-of-concept for edge-based gesture control, several limitations must be addressed in future iterations. Foremost, as identified in the bottleneck analysis, the reliance on standard HTTP over Wi-Fi introduces unpredictable network jitter. Future development should explore lightweight IoT protocols such as MQTT or dedicated wireless communication standards like Zigbee and ESP-NOW to significantly mitigate latency and ensure deterministic transmission \cite{chen_wifi}. Furthermore, the current interaction model is restricted to discrete binary commands (ON/OFF). Expanding the system's gesture vocabulary to support continuous recognition—such as rotational hand movements for analog light dimming—would substantially enhance functional versatility. Finally, from a hardware perspective, the existing actuator nodes utilize modular wiring. Transitioning to a custom Printed Circuit Board (PCB) design is essential to improve physical durability, ensure electrical safety, and optimize the form factor for commercial smart home deployment.

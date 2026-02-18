@@ -21,7 +21,7 @@ This section presents the experimental results evaluating the proposed system's 
 The LSTM model was trained on a dataset of 10 dynamic gestures collected from 8 subjects. Fig. \ref{fig:training_accuracy} illustrates the training and validation accuracy over 50 epochs, while Fig. \ref{fig:training_loss} shows the corresponding loss curves.
 \begin{enumerate}
     \item Convergence: As seen in Fig. \ref{fig:training_accuracy}, the model achieved convergence rapidly, reaching $>$90\% accuracy within the first 10 epochs.
-    \item Final Accuracy: The baseline Keras model achieved a validation accuracy of 99\%, demonstrating excellent generalization without significant overfitting, as indicated by the minimal gap between training and validation loss in Fig. \ref{fig:training_loss}.
+    \item Final Accuracy: The baseline Keras model achieved a validation accuracy over 98\%, demonstrating excellent generalization without significant overfitting, as indicated by the minimal gap between training and validation loss in Fig. \ref{fig:training_loss}.
 \end{enumerate}
 
 
@@ -68,3 +68,33 @@ Total Latency (ms) & 31.06 & 656.16 & \textbf{134.52} & 64.37 \\
 \end{table}
 
 The system demonstrates a robust processing capability with an average speed of 23.83 FPS and a low edge inference latency of 28.82 ms, confirming the efficacy of the TFLite optimization. While the mean total response time of 134.52 ms falls within the instantaneous perception range ($<$200 ms) \cite{Attig_LatencyGuidelines}, the network latency exhibits significant variability ($\sigma=64.15$ ms) with a maximum delay reaching 601 ms. This indicates that while edge processing is deterministic, the Wi-Fi transmission introduces stochastic jitter which serves as the primary bottleneck in the distributed architecture \cite{Gore_PDV}.
+
+
+\subsection{Environmental Robustness}
+To validate the system's robustness in real-world scenarios, comprehensive testing was conducted across varying environmental conditions, specifically focusing on user distance, lighting intensity, and camera resolution. The detailed experimental results regarding accuracy and latency for each scenario are summarized in Table \ref{tab:env_variations}.
+
+\begin{table}[htbp]
+\caption{System Robustness Analysis: Impact of Environmental Variations on Performance}
+\label{tab:env_variations}
+\centering
+\begin{tabular}{l c c c c}
+\hline
+\hline
+\textbf{Condition} & \textbf{Value} & \textbf{Accuracy (\%)} & \textbf{Inference (ms)} & \textbf{Speed (FPS)} \\
+\hline
+\multicolumn{5}{l}{\textit{A. Impact of User Distance}} \\
+Near & 30 cm & 99.0\% & 29.10 & 23.84 \\
+\textbf{Optimal} & \textbf{50 cm} & \textbf{99.6\%} & \textbf{28.62} & \textbf{23.76} \\
+Far & 70 cm & 98.6\% & 28.73 & 23.87 \\
+\hline
+\multicolumn{5}{l}{\textit{B. Impact of Lighting Intensity}} \\
+Dim & $\approx$ 30 Lux & 98.3\% & 28.85 & 23.96 \\
+Normal & $\approx$ 150 Lux & 99.7\% & 28.56 & 23.83 \\
+Bright & $\approx$ 400 Lux & 99.2\% & 29.04 & 23.68 \\
+\hline
+\multicolumn{5}{l}{\textit{C. Impact of Camera Resolution}} \\
+\textbf{Low Res} & \textbf{480p} & \textbf{98.7\%} & \textbf{27.19} & \textbf{25.04} \\
+High Res & 720p & 99.4\% & 30.45 & 22.61 \\
+\hline
+\end{tabular}
+\end{table}

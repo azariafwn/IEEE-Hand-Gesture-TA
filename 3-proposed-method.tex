@@ -1,6 +1,6 @@
 \section{Proposed Method}
 
-This research employs an experimental approach to develop and evaluate a distributed smart home control system. The proposed system integrates edge-based deep learning for gesture recognition with wireless IoT actuators.
+The proposed system integrates edge-based deep learning for gesture recognition with wireless IoT actuators.
 
 
 \subsection{System Architecture}
@@ -34,7 +34,7 @@ The data propagation process can be divided into three sequential stages:
 The core of the system is the gesture recognition pipeline running on the Raspberry Pi 5. The process involves three stages:
 \begin{enumerate}
     \item Data Acquisition \& Preprocessing: The system captures video at 30 FPS. MediaPipe Hands is used to extract 21 3D hand landmarks per frame. These coordinates are normalized to ensure invariance to hand position and scale.
-    \item Deep Learning Model (LSTM): A custom Long Short-Term Memory (LSTM) network is designed to classify dynamic gestures. The architecture consists of three LSTM layers (64, 128, and 64 units) followed by Dense layers. The model is trained on a dataset of 10 dynamic gestures, divided into Selection Gestures (pointing 1-4 fingers) and Action Gestures (Open \& Close palm).
+    \item Deep Learning Model (LSTM): A custom Long Short-Term Memory (LSTM) network is designed to classify dynamic gestures. The architecture consists of three LSTM layers (64, 128, and 64 units) followed by Dense layers. To accommodate natural human movement variability, the model is trained on a dataset of 10 physical dynamic gesture classes mapped to 6 logical control labels. Specifically, the Selection Gestures (pointing 1-4 fingers) are explicitly trained with two different initial states: transitioning from a closed fist (\texttt{close\_to\_x}) and from an open palm (\texttt{open\_to\_x}). Combined with the two Action Gestures (\texttt{close\_to\_open\_palm} and \texttt{open\_to\_close\_palm}), this 10-class formulation ensures the model is robust and invariant to the user's prior hand position, enabling seamless and intuitive real-time interaction.
     \item Edge Optimization: To achieve real-time performance on the Raspberry Pi, the trained Keras model is converted to TensorFlow Lite (TFLite) format with 8-bit integer quantization \cite{orasan2022quantization}. This reduces model size and inference latency significantly compared to the original FP32 model.
 \end{enumerate}
 

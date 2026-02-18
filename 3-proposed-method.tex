@@ -13,7 +13,7 @@ The data propagation process can be divided into three sequential stages:
     \begin{itemize}
         \item MediaPipe: Extracts 21 3D hand landmarks from raw video frames \cite{han2022mediapipe}.
         \item TFLite Interpreter: Performs inference using the optimized LSTM model to classify the gesture (e.g., \texttt{AKSI\_ON} or \texttt{DEVICE\_1}).
-        \item State Machine Logic: Processes the classification result to determine the final combination command (e.g., "Turn On Device 1") and translates it into a specific HTTP GET request (e.g., \texttt{GET http://<Target\_IP>/on}).
+        \item State Machine Logic: Processes the classification result to determine the final combination command (e.g., "Turn On Device 1") and translates it into a specific HTTP request.
     \end{itemize}
 
     \item \textbf{Data Transmission (Wi-Fi Network):} The generated HTTP request is transmitted wirelessly via the local Wi-Fi network, which acts as the communication bridge between the central processing unit and the distributed actuators.

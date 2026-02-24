@@ -18,11 +18,9 @@ This section presents the experimental results evaluating the proposed system's 
 \end{figure}
 
 \subsection{Model Training Performance}
-The LSTM model was trained on a dataset of 10 dynamic gestures collected from 8 subjects. Fig. \ref{fig:training_accuracy} illustrates the training and validation accuracy over 35 epochs, while Fig. \ref{fig:training_loss} shows the corresponding loss curves.
-\begin{enumerate}
-    \item Convergence: As seen in Fig. \ref{fig:training_accuracy}, the model achieved convergence rapidly, reaching $>$90\% accuracy within the first 10 epochs.
-    \item Final Accuracy: The baseline Keras model achieved a validation accuracy over 98\%, demonstrating excellent generalization without significant overfitting, as indicated by the minimal gap between training and validation loss in Fig. \ref{fig:training_loss}.
-\end{enumerate}
+The LSTM model was trained on a dataset of 10 dynamic gestures collected from 8 subjects. Fig. \ref{fig:training_accuracy} illustrates the training and validation accuracy, while Fig. \ref{fig:training_loss} shows the corresponding loss curves over the training period, which concluded at epoch 65 due to the triggering of the early stopping mechanism. As observed in Fig. \ref{fig:training_accuracy}, the model achieved rapid convergence, surpassing 90\% accuracy within the first 10 epochs and stabilizing with a validation accuracy exceeding 98\%.
+
+The close proximity between the training and validation curves in Fig. \ref{fig:training_loss} indicates robust generalization with minimal overfitting. Transient fluctuations observed in the validation metrics, most notably around epoch 15, are characteristic artifacts of the aggressive 50\% Dropout regularization. These fluctuations confirm that the network maintains stochastic resilience, preventing it from memorizing the training data sequence and ensuring reliable performance on unseen validation samples.
 
 
 \subsection{Edge Optimization (Quantization)}

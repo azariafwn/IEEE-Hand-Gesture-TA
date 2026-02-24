@@ -4,21 +4,21 @@ This section presents the experimental results evaluating the proposed system's 
 \begin{figure}[!t]
     \centering
     % Ganti nama file sesuai file kamu
-    \includegraphics[width=\columnwidth]{fig/grafik_akurasi.png}
-    \caption{Model training performance evaluation over 50 epochs: Model Accuracy demonstrating rapid convergence.}
+    \includegraphics[width=\columnwidth]{fig/model_accuracy_paper.pdf}
+    \caption{Model training performance: Model Accuracy demonstrating rapid convergence.}
     \label{fig:training_accuracy}
 \end{figure}
 
 \begin{figure}[!t]
     \centering
     % Ganti nama file sesuai file kamu
-    \includegraphics[width=\columnwidth]{fig/grafik_loss.png}
-    \caption{Model training performance evaluation over 50 epochs: Model Loss showing minimal overfitting.}
+    \includegraphics[width=\columnwidth]{fig/model_loss_paper.pdf}
+    \caption{Model training performance: Model Loss showing minimal overfitting.}
     \label{fig:training_loss}
 \end{figure}
 
 \subsection{Model Training Performance}
-The LSTM model was trained on a dataset of 10 dynamic gestures collected from 8 subjects. Fig. \ref{fig:training_accuracy} illustrates the training and validation accuracy over 50 epochs, while Fig. \ref{fig:training_loss} shows the corresponding loss curves.
+The LSTM model was trained on a dataset of 10 dynamic gestures collected from 8 subjects. Fig. \ref{fig:training_accuracy} illustrates the training and validation accuracy over 35 epochs, while Fig. \ref{fig:training_loss} shows the corresponding loss curves.
 \begin{enumerate}
     \item Convergence: As seen in Fig. \ref{fig:training_accuracy}, the model achieved convergence rapidly, reaching $>$90\% accuracy within the first 10 epochs.
     \item Final Accuracy: The baseline Keras model achieved a validation accuracy over 98\%, demonstrating excellent generalization without significant overfitting, as indicated by the minimal gap between training and validation loss in Fig. \ref{fig:training_loss}.

@@ -1,58 +1,176 @@
 \section{Proposed Method}
+The proposed system focuses on the computational pipeline of sequence-based hand gesture recognition executed locally on a Raspberry Pi 5. This section details the software architecture, data preprocessing, model design, and evaluation metrics used to validate the system.
 
-The proposed system integrates edge-based deep learning for gesture recognition with wireless IoT actuators.
+\subsection{Software Pipeline Architecture}
 
+The proposed system focuses entirely on the computational pipeline of sequence-based hand gesture recognition, executed locally on a Raspberry Pi 5. The core software architecture is designed to process video streams in real-time, extracting spatial features and classifying temporal sequences without relying on external cloud processing. 
 
-\subsection{System Architecture}
-The system is designed with a distributed architecture consisting of two main zones: the \textit{User Zone} and the \textit{Device Zone}, connected via a local Wi-Fi network. The comprehensive information flow between these components is illustrated in Fig. \ref{fig:system_architecture}.
-
-The data propagation process can be divided into three sequential stages:
-
+As illustrated in Fig. \ref{fig:software_pipeline}, the data processing flow consists of four sequential stages:
 \begin{enumerate}
-    \item \textbf{Data Processing (User Zone):} The process initiates when the user performs a gesture in front of the camera. The Raspberry Pi 5 captures the video stream and processes it through a sequential pipeline:
-    \begin{itemize}
-        \item MediaPipe: Extracts 21 3D hand landmarks from raw video frames \cite{han2022mediapipe}.
-        \item TFLite Interpreter: Performs inference using the optimized LSTM model to classify the gesture (e.g., \texttt{AKSI\_ON} or \texttt{DEVICE\_1}).
-        \item State Machine Logic: Processes the classification result to determine the final combination command (e.g., "Turn On Device 1") and translates it into a specific HTTP request.
-    \end{itemize}
-
-    \item \textbf{Data Transmission (Wi-Fi Network):} The generated HTTP request is transmitted wirelessly via the local Wi-Fi network, which acts as the communication bridge between the central processing unit and the distributed actuators.
-
-    \item \textbf{Command Execution (Device Zone):} The target ESP8266 node receives the HTTP packet, parses the command, and toggles the logic state (HIGH/LOW) of its GPIO pin. This signal activates the relay module, physically switching the 220V AC load to power the connected electronic appliance.
+    \item \textbf{Video Acquisition:} The system captures continuous video frames from a standard webcam at 30 frames per second (FPS).
+    \item \textbf{Spatial Feature Extraction:} Each raw frame is processed using the MediaPipe Hands framework to extract the spatial coordinates of 21 3D hand landmarks.
+    \item \textbf{Temporal Sequence Buffering:} The extracted spatial coordinates are flattened and stored in a rolling buffer. A complete sequence consists of 30 consecutive frames, effectively capturing the temporal dynamics of the gesture over a one-second window.
+    \item \textbf{Inference and State Management:} Once the buffer reaches its capacity, the temporal sequence is fed into the quantized TFLite LSTM model. The resulting predicted gesture class is then processed by a State Machine to validate the command, handle timeouts, and trigger the corresponding smart home logic output.
 \end{enumerate}
 
 \begin{figure*}[!t]
-    \centering
-    % Ganti nama file sesuai file kamu
-    \includegraphics[width=0.9\textwidth]{fig/diagram-alur-data.png} 
-    \caption{Data flow diagram of the proposed distributed control system illustrating the process from gesture input to actuator response.}
-    \label{fig:system_architecture}
+\centering
+\begin{tikzpicture}[
+    node distance=1.5cm and 1.2cm,
+    box/.style={rectangle, draw=black, thick, fill=blue!5, text width=2.5cm, align=center, minimum height=1.5cm, font=\small},
+    arrow/.style={-{Stealth[scale=1.2]}, thick}
+]
+
+% Definisi Block Diagram
+\node (cam) [box, fill=gray!10] {Video Capture\\(30 FPS)};
+\node (mp) [box, right=of cam] {MediaPipe\\Landmark Extraction};
+\node (buf) [box, right=of mp] {Sequence Buffering\\(30 Frames)};
+\node (lstm) [box, right=of buf, fill=green!10] {TFLite LSTM\\Inference};
+\node (sm) [box, right=of lstm, fill=orange!10] {State Machine\\Logic Output};
+
+% Definisi Panah dan Label
+\draw [arrow] (cam) -- node[above, font=\scriptsize] {Raw Frame} (mp);
+\draw [arrow] (mp) -- node[above, font=\scriptsize] {21 3D Points} (buf);
+\draw [arrow] (buf) -- node[above, font=\scriptsize] {Sequence} (lstm);
+\draw [arrow] (lstm) -- node[above, font=\scriptsize] {Class Label} (sm);
+
+\end{tikzpicture}
+\caption{Software pipeline architecture illustrating the sequential data flow from raw video capture to final logic output on the edge device.}
+\label{fig:software_pipeline}
 \end{figure*}
 
-\subsection{Gesture Recognition Pipeline}
 
-The core of the system is the gesture recognition pipeline running on the Raspberry Pi 5. The process involves three stages:
-\begin{enumerate}
-    \item Data Acquisition \& Preprocessing: The system captures video at 30 FPS. MediaPipe Hands is used to extract 21 3D hand landmarks per frame. These coordinates are normalized to ensure invariance to hand position and scale.
-    \item Deep Learning Model (LSTM): A custom Long Short-Term Memory (LSTM) network is designed to classify dynamic gestures. The architecture consists of three LSTM layers (64, 128, and 64 units) followed by Dense layers. To accommodate natural human movement variability, the model is trained on a dataset of 10 physical dynamic gesture classes mapped to 6 logical control labels. Specifically, the Selection Gestures (pointing 1-4 fingers) are explicitly trained with two different initial states: transitioning from a closed fist (\texttt{close\_to\_x}) and from an open palm (\texttt{open\_to\_x}). Combined with the two Action Gestures (\texttt{close\_to\_open\_palm} and \texttt{open\_to\_close\_palm}), this 10-class formulation ensures the model is robust and invariant to the user's prior hand position, enabling seamless and intuitive real-time interaction.
-    \item Edge Optimization: To achieve real-time performance on the Raspberry Pi, the trained Keras model is converted to TensorFlow Lite (TFLite) format with 8-bit integer quantization \cite{orasan2022quantization}. This reduces model size and inference latency significantly compared to the original FP32 model.
-\end{enumerate}
+\subsection{Gesture Vocabulary and Data Preprocessing}
 
-\subsection{IoT Actuator Unit Design}
+To accommodate natural human movement variability and provide initial-state invariance, the system utilizes a 10-class physical gesture dataset mapped to 6 logical control commands. As detailed in Table \ref{tab:gesture_classes}, the vocabulary includes Action Gestures for state toggling and Selection Gestures for device targeting. Providing two physical variations for each Selection Gesture, originating from either a closed fist (\texttt{close\_to\_x}) or an open palm (\texttt{open\_to\_x}), ensures that users can transition fluidly between commands without returning to a rigid, predefined neutral pose.
 
-The actuator nodes are designed to be standalone and compact, as shown in the schematic in Fig. \ref{fig:schematic}. Each unit integrates a Hi-Link HLK-PM01 AC-DC converter (220V to 5V) to power the ESP8266 and relay directly from the mains, eliminating the need for external adapters. The circuit employs an optocoupler-isolated relay to ensure safety between the low-voltage control logic (3.3V) and the high-voltage AC load, providing galvanic isolation that prevents high-voltage disturbances from propagating into the low-voltage domain \cite{agunloye2023}.
+\begin{table}[htbp]
+\caption{Definition of Physical Gestures and Logical Command Mapping}
+\label{tab:gesture_classes}
+\centering
+\begin{tabular}{l c c}
+\hline
+\hline
+\textbf{Category} & \textbf{Logical Label} & \textbf{Physical Gesture Class} \\ 
+\hline
+\multirow{2}{*}{Action} & \texttt{ACTION\_ON} & \texttt{close\_to\_open\_palm} \\ 
+                        & \texttt{ACTION\_OFF} & \texttt{open\_to\_close\_palm} \\ 
+\hline
+\multirow{8}{*}{Selection} & \multirow{2}{*}{\texttt{DEVICE\_1}} & \texttt{close\_to\_one} \\  
+                           &                                     & \texttt{open\_to\_one} \\  
+                           & \multirow{2}{*}{\texttt{DEVICE\_2}} & \texttt{close\_to\_two} \\  
+                           &                                     & \texttt{open\_to\_two} \\  
+                           & \multirow{2}{*}{\texttt{DEVICE\_3}} & \texttt{close\_to\_three} \\ 
+                           &                                     & \texttt{open\_to\_three} \\ 
+                           & \multirow{2}{*}{\texttt{DEVICE\_4}} & \texttt{close\_to\_four} \\  
+                           &                                     & \texttt{open\_to\_four} \\ 
+\hline
+\end{tabular}
+\end{table}
 
-To ensure safety and aesthetics, a custom 3D-printed enclosure was designed using Autodesk Fusion 360 and fabricated with PLA+ filament. The enclosure features a snap-fit mechanism to secure components without screws and includes ventilation to prevent overheating. The firmware on the ESP8266 is programmed to function as a lightweight web server that toggles the GPIO state based on received HTTP requests.
+Following sequence capture, spatial feature extraction is performed using the MediaPipe Hands framework. As illustrated in Fig. \ref{fig:mediapipe_landmarks}, MediaPipe identifies and extracts the spatial coordinates of 21 3D hand landmarks for each individual video frame. 
 
 \begin{figure}[!t]
     \centering
-    % Ganti nama file sesuai file kamu
-    \includegraphics[width=\columnwidth]{fig/skematik.png}
-    \caption{Schematic diagram of the IoT actuator node showing galvanic isolation between AC load and DC control logic.}
-    \label{fig:schematic}
+    \includegraphics[width=\columnwidth]{fig/landmark-mediapipe.png}
+    \caption{Topology of the 21 3D hand landmarks extracted by MediaPipe.}
+    \label{fig:mediapipe_landmarks}
 \end{figure}
 
-\subsection{Control Logic \& Integration}
-The software stack on the Raspberry Pi is containerized using Docker to ensure reproducibility and dependency isolation \cite{potdar2020docker}. Although containerization introduces a marginal computational overhead, this approach is deliberately chosen to guarantee seamless deployment, eliminate versioning conflicts, and enable highly scalable cross-platform distribution without the risk of environment crashes. 
+To ensure the model remains robust and invariant to the user's distance from the camera and hand size variations, the raw Cartesian coordinates $(x, y, z)$ of each landmark are geometrically normalized relative to the wrist point (Landmark 0). Once extracted and normalized, the spatial coordinates from the 21 landmarks are flattened into a single one-dimensional vector per frame. Specifically, the 21 points multiplied by 3 coordinates yield a 63-dimensional spatial feature vector, denoted as $v_t \in \mathbb{R}^{63}$, which represents the complete hand posture at time step $t$.
 
-The core control logic implements a State Machine to prevent accidental triggers. A command is executed only when a valid sequence is detected: a Selection Gesture (selecting a specific device) followed immediately by an Action Gesture (turning it ON/OFF). To prevent unintended activation, a timeout mechanism is implemented; if a valid Action Gesture is not detected within a 3-second window following a Selection Gesture, the state machine automatically resets to the IDLE state, discarding the pending command. This logic minimizes false positives and enhances user experience.
+To capture the temporal dynamics of the movement, these frame-level vectors are accumulated sequentially over time. In this study, a complete gesture sequence is defined by a temporal window of $T = 30$ consecutive frames. Consequently, the final preprocessed data fed into the Deep Learning model is structured as a two-dimensional numerical tensor, $X$, representing the sequence of spatial vectors:
+
+\begin{equation}
+X = 
+\begin{bmatrix}
+v_1 \\
+v_2 \\
+\vdots \\
+v_{30}
+\end{bmatrix}
+=
+\begin{bmatrix}
+x_{1,1} & x_{1,2} & \cdots & x_{1,63} \\
+x_{2,1} & x_{2,2} & \cdots & x_{2,63} \\
+\vdots & \vdots & \ddots & \vdots \\
+x_{30,1} & x_{30,2} & \cdots & x_{30,63}
+\end{bmatrix}
+\end{equation}
+
+This matrix structure dictates the input layer dimensions of the subsequent LSTM architecture, where the tensor shape of $(30, 63)$ corresponds directly to the temporal sequence length ($T=30$) and the spatial feature dimensionality ($D=63$) per time step, utilizing double-precision floating-point formatting (\texttt{float64}) for computational accuracy.
+
+
+\subsection{Deep Learning Architecture}
+
+To effectively learn the temporal dependencies inherent in dynamic hand movements, this study employs a Stacked Long Short-Term Memory (LSTM) network. LSTM are explicitly designed to overcome the vanishing gradient problem in standard recurrent networks, making them highly effective for processing the sequentially buffered $(30, 63)$ spatial feature tensors. The complete layer-by-layer configuration of the proposed network is detailed in Table \ref{tab:model_architecture}.
+
+\begin{table}[htbp]
+\caption{Detailed Architecture of the Proposed Stacked LSTM Model}
+\label{tab:model_architecture}
+\centering
+\begin{tabular}{l l c c}
+\hline
+\hline
+\textbf{Layer (Type)} & \textbf{Units / Rate} & \textbf{Activation} & \textbf{Output Shape} \\ 
+\hline
+Input Layer & - & - & $(30, 63)$ \\
+LSTM 1 & 64 units & \texttt{tanh} & $(30, 64)$ \\
+Dropout 1 & 0.5 rate & - & $(30, 64)$ \\
+LSTM 2 & 128 units & \texttt{tanh} & $(30, 128)$ \\
+Dropout 2 & 0.5 rate & - & $(30, 128)$ \\
+LSTM 3 & 64 units & \texttt{tanh} & $(64)$ \\
+Dense 1 & 64 units & \texttt{relu} & $(64)$ \\
+Dense 2 & 32 units & \texttt{relu} & $(32)$ \\
+Dense 3 (Output) & 10 units & \texttt{softmax} & $(10)$ \\
+\hline
+\end{tabular}
+\end{table}
+
+As shown in the architectural summary, the core feature extraction engine consists of three stacked LSTM layers with 64, 128, and 64 units, respectively. The first two LSTM layers are configured to return the full sequence, allowing the subsequent layer to analyze the temporal progression comprehensively. The final LSTM layer extracts the most salient temporal features and returns a flattened 64 dimensional vector. 
+
+To mitigate the risk of overfitting during training, a common challenge in deep sequence models, Dropout layers with a rate of 0.5 are strategically inserted after the first and second LSTM layers. This stochastic regularization technique randomly drops 50\% of the neural connections during each training epoch, forcing the network to learn robust, generalized representations rather than memorizing the training data.
+
+Following the recurrent stages, the network utilizes a deep classifier composed of two dense (fully connected) layers with 64 and 32 units, employing the Rectified Linear Unit (ReLU) activation function for non-linear transformations. Finally, the output layer consists of 10 dense units with a \texttt{softmax} activation function. This configuration computes the probability distribution across the 10 specific physical gesture classes (as defined in Table \ref{tab:gesture_classes}). These physical class predictions are subsequently routed to the system's State Machine to be securely mapped into the 6 logical command outputs. The entire model is compiled using the Adam optimizer with categorical cross-entropy as the loss function.
+
+
+
+\subsection{Edge Optimization and Deployment}
+
+To achieve real-time inference on the resource-constrained Raspberry Pi 5, the trained 32-bit floating-point (FP32) Keras model undergoes post-training quantization. Specifically, the model is converted into the TensorFlow Lite (TFLite) format utilizing 8-bit integer (INT8) quantization. This optimization strategy fundamentally reduces the memory footprint and accelerates inference speed by substituting computationally expensive floating-point arithmetic with efficient integer operations, which are highly optimized for ARM-based embedded processors.
+
+For the deployment phase, the entire software stack is containerized using Docker to ensure dependency isolation and cross-platform reproducibility. While containerization introduces a negligible computational overhead, it guarantees stable, continuous operation within the edge computing environment without the risk of system library conflicts.
+
+Finally, to translate raw model predictions into robust smart home commands, the deployment incorporates a custom State Machine logic layer. This component mitigates false positives by enforcing a strict chronological sequence: a Selection Gesture (e.g., pointing to \texttt{DEVICE\_1}) must be followed by an Action Gesture (e.g., \texttt{ACTION\_ON}). Furthermore, a temporal timeout mechanism is implemented; if a valid Action Gesture is not detected within a 3-second window following a device selection, the system autonomously resets to an \texttt{IDLE} state. This logic discards pending operations, thereby ensuring interaction safety and preventing unintended appliance activation.
+
+
+
+\subsection{Evaluation Metrics}
+
+To rigorously assess the performance of the proposed dynamic gesture classification model, a comprehensive evaluation is conducted using standard machine learning metrics derived from a confusion matrix. Relying solely on overall accuracy can be misleading in multi-class classification tasks; therefore, Precision, Recall, and the F1-Score are employed to analyze the model's predictive reliability across all 10 physical gesture classes.
+
+The foundation of these metrics relies on four outcomes: True Positives ($TP$), True Negatives ($TN$), False Positives ($FP$), and False Negatives ($FN$). Based on these components, the evaluation metrics are mathematically defined as follows:
+
+\begin{enumerate}
+    \item \textbf{Accuracy:} The ratio of correctly predicted observations to the total observations. It provides a general overview of system performance.
+    \begin{equation}
+        \text{Accuracy} = \frac{TP + TN}{TP + TN + FP + FN}
+    \end{equation}
+
+    \item \textbf{Precision:} The ratio of correctly predicted positive observations to the total predicted positives. In the context of smart home control, high precision ensures that when the system detects a specific gesture, it is highly likely to be correct, thereby minimizing accidental appliance triggers.
+    \begin{equation}
+        \text{Precision} = \frac{TP}{TP + FP}
+    \end{equation}
+
+    \item \textbf{Recall (Sensitivity):} The ratio of correctly predicted positive observations to all observations in actual class. High recall indicates that the system rarely misses a user's intended gesture.
+    \begin{equation}
+        \text{Recall} = \frac{TP}{TP + FN}
+    \end{equation}
+
+    \item \textbf{F1-Score:} The harmonic mean of Precision and Recall. This metric is crucial for determining the optimal balance between exactness (Precision) and completeness (Recall), especially when dealing with subtle variations in human hand movements.
+    \begin{equation}
+        \text{F1-Score} = 2 \times \frac{\text{Precision} \times \text{Recall}}{\text{Precision} + \text{Recall}}
+    \end{equation}
+\end{enumerate}
+
+These metrics are calculated for each individual gesture class to identify any specific classification bottlenecks, ensuring the system meets the rigorous reliability standards required for seamless ambient interaction.

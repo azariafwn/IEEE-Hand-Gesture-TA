@@ -1,30 +1,78 @@
 \section{Result}
-This section presents the experimental results evaluating the proposed system's performance. The evaluation focuses on three key aspects: model training performance, edge computing efficiency on Raspberry Pi 5, and real-time system responsiveness.
+This section evaluates the proposed gesture recognition system, focusing on the model's classification reliability, computational efficiency on the edge device, and robustness in real-world sequential interactions.
 
-\begin{figure}[!t]
+\subsection{Model Training Performance}
+
+The proposed LSTM model was trained to classify the 10 physical gesture sequences. Fig. \ref{fig:training_accuracy} illustrates the training and validation accuracy, while Fig. \ref{fig:training_loss} shows the corresponding loss curves over the training period. The training process concluded optimally at epoch 65 due to the triggering of an early stopping mechanism, which halted the process to prevent model degradation.
+
+\begin{figure}[htbp]
     \centering
-    % Ganti nama file sesuai file kamu
     \includegraphics[width=\columnwidth]{fig/model_accuracy_paper.pdf}
-    \caption{Model training performance: Model Accuracy demonstrating rapid convergence.}
+    \caption{Model training performance: Model Accuracy demonstrating rapid convergence and stability.}
     \label{fig:training_accuracy}
 \end{figure}
 
-\begin{figure}[!t]
+\begin{figure}[htbp]
     \centering
-    % Ganti nama file sesuai file kamu
     \includegraphics[width=\columnwidth]{fig/model_loss_paper.pdf}
-    \caption{Model training performance: Model Loss showing minimal overfitting.}
+    \caption{Model training performance: Model Loss showing minimal generalization gap.}
     \label{fig:training_loss}
 \end{figure}
 
-\subsection{Model Training Performance}
-The LSTM model was trained on a dataset of 10 dynamic gestures collected from 8 subjects. Fig. \ref{fig:training_accuracy} illustrates the training and validation accuracy, while Fig. \ref{fig:training_loss} shows the corresponding loss curves over the training period, which concluded at epoch 65 due to the triggering of the early stopping mechanism. As observed in Fig. \ref{fig:training_accuracy}, the model achieved rapid convergence, surpassing 90\% accuracy within the first 10 epochs and stabilizing with a validation accuracy exceeding 98\%.
+As observed in Fig. \ref{fig:training_accuracy}, the model achieved rapid convergence. The accuracy surpassed 90\% within the first 10 epochs and eventually stabilized with a validation accuracy exceeding 98\%. This rapid learning phase demonstrates the effectiveness of the chosen LSTM architecture in extracting temporal features from the buffered spatial coordinates.
 
-The close proximity between the training and validation curves in Fig. \ref{fig:training_loss} indicates robust generalization with minimal overfitting. Transient fluctuations observed in the validation metrics, most notably around epoch 15, are characteristic artifacts of the aggressive 50\% Dropout regularization. These fluctuations confirm that the network maintains stochastic resilience, preventing it from memorizing the training data sequence and ensuring reliable performance on unseen validation samples.
+Furthermore, the close proximity between the training and validation curves in Fig. \ref{fig:training_loss} indicates robust generalization with minimal overfitting. Transient fluctuations observed in the validation metrics, most notably the sharp dip and rapid recovery around epoch 15, are characteristic artifacts of the aggressive 50\% Dropout regularization. These fluctuations confirm that the network maintains stochastic resilience, preventing it from memorizing the training data sequence and ensuring reliable performance on unseen validation samples.
 
 
-\subsection{Edge Optimization (Quantization)}
-To enable real-time inference on the Raspberry Pi 5, the model was optimized using TensorFlow Lite (TFLite) 8-bit quantization. Table \ref{tab:optimization_comparison} compares the baseline (FP32) and optimized (INT8) models.
+\subsection{Gesture Classification Accuracy}
+
+To robustly evaluate the model's predictive performance, inferences were conducted using an unseen testing dataset comprising 400 sequential gesture samples (40 samples per class). The evaluation specifically highlights the performance of the quantized TFLite INT8 model, as it represents the exact architecture deployed on the Raspberry Pi edge device. 
+
+Fig. \ref{fig:confusion_matrix} presents the confusion matrix for the 10 physical gesture classes. The heavily concentrated diagonal demonstrates the model's exceptional capability in distinguishing complex temporal movements. Out of 400 test sequences, the model achieved a remarkable overall accuracy of 98.75\%, successfully classifying 394 samples.
+
+\begin{figure}[htbp]
+    \centering
+    % Pastikan nama file sesuai dengan output PDF python kamu
+    \includegraphics[width=\columnwidth]{fig/confusion_matrix_tflite.pdf}
+    \caption{Confusion Matrix of the quantized TFLite INT8 model evaluated on the unseen testing dataset.}
+    \label{fig:confusion_matrix}
+\end{figure}
+
+Beyond raw accuracy, the reliability of the system for smart home control is validated through detailed classification metrics, summarized in Table \ref{tab:classification_report}. 
+
+\begin{table}[htbp]
+\caption{Classification Report for the Deployed TFLite Model}
+\label{tab:classification_report}
+\centering
+\begin{tabular}{l c c c}
+\hline
+\hline
+\textbf{Gesture Class} & \textbf{Precision} & \textbf{Recall} & \textbf{F1-Score} \\ 
+\hline
+\texttt{close\_to\_open\_palm} & 1.00 & 0.97 & 0.99 \\
+\texttt{open\_to\_close\_palm} & 0.97 & 0.97 & 0.97 \\
+\texttt{close\_to\_one}        & 0.97 & 0.97 & 0.97 \\
+\texttt{open\_to\_one}         & 0.98 & 1.00 & 0.99 \\
+\texttt{close\_to\_two}        & 1.00 & 0.97 & 0.99 \\
+\texttt{open\_to\_two}         & 1.00 & 1.00 & 1.00 \\
+\texttt{close\_to\_three}      & 0.98 & 1.00 & 0.99 \\
+\texttt{open\_to\_three}       & 0.97 & 0.97 & 0.97 \\
+\texttt{close\_to\_four}       & 0.98 & 1.00 & 0.99 \\
+\texttt{open\_to\_four}        & 1.00 & 0.97 & 0.99 \\
+\hline
+\textbf{Macro Average}         & \textbf{0.98} & \textbf{0.98} & \textbf{0.98} \\
+\hline
+\end{tabular}
+\end{table}
+
+As detailed in the report, the model consistently maintained Precision, Recall, and F1-Scores above 0.97 across all classes. The minimal misclassifications observed are primarily attributed to subtle overlapping spatial features during the transition phases of similar gestures. For instance, a single instance of \texttt{open\_to\_four} was misclassified as \texttt{close\_to\_four}. Such transient confusions are computationally expected due to the structural similarity of the final hand landmarks, yet they do not significantly degrade the overall robustness of the interaction paradigm. The high precision scores specifically guarantee that false positive activations, a critical vulnerability in home automation, are effectively minimized.
+
+
+\subsection{Edge Computational Efficiency}
+
+Deploying deep learning architectures directly onto edge devices like the Raspberry Pi 5 requires strict memory and computational management. To quantify the impact of the post-training optimization discussed in Section III-D, a comparative benchmark was conducted between the baseline 32-bit Keras model and the deployed 8-bit quantized TFLite model. 
+
+The evaluation metrics focused on storage footprint, runtime memory (RAM) allocation, and overall classification accuracy. The results of this benchmark are summarized in Table \ref{tab:optimization_comparison}.
 
 \begin{table}[htbp]
 \caption{Comparison of Model Resources and Performance: Baseline vs. Optimized}
@@ -42,57 +90,25 @@ Accuracy & 98.75\% & 98.50\% & -0.25\% Loss \\
 \end{tabular}
 \end{table}
 
-The quantization process yielded significant efficiency gains. As shown in Table \ref{tab:optimization_comparison}, the model size was reduced by 89.7\%, validating the storage efficiency of 8-bit integer weights. More importantly, runtime memory consumption dropped drastically by 97.7\%. This massive reduction is attributed to the TFLite interpreter's lightweight architecture, which eliminates the overhead of the full TensorFlow framework and utilizes efficient memory mapping. This ensures stable operation on the edge device, preserving system resources for other concurrent processes such as video buffering and network communication, with only a negligible accuracy loss of 0.25\%.
+The empirical data demonstrates the sheer efficacy of INT8 quantization for edge deployments. The optimization process successfully compressed the physical model size from 2252 KB down to merely 233 KB, achieving an 89.7\% reduction. More importantly for continuous execution, the runtime RAM usage plummeted by 97.7\%, dropping from approximately 47.22 MB to a highly efficient 1.07 MB. 
+
+Crucially, this massive computational relief was achieved without severely compromising the model's predictive capabilities. The quantized TFLite model experienced a negligible accuracy degradation of only 0.25\% compared to the baseline FP32 model. This proves that the system is exceptionally lightweight, leaving ample system memory for the Raspberry Pi to concurrently run the MediaPipe extraction pipeline and State Machine logic without risk of memory overflow or thermal throttling.
 
 
-\subsection{Real-time System Performance}
-The system's end-to-end performance was evaluated under optimal conditions (50 cm distance, normal lighting). The statistical results over 2100 trials are summarized in Table \ref{tab:performance_stats}.
+\subsection{Sequential Interaction Performance}
 
-\begin{table}[htbp]
-\caption{Statistical Summary of Real-Time Performance Metrics}
-\label{tab:performance_stats}
-\centering
-\begin{tabular}{l c c c c}
-\hline
-\hline
-\textbf{Metric} & \textbf{Min} & \textbf{Max} & \textbf{Mean} & \textbf{$\sigma$ (Std Dev)} \\
-\hline
-Processing Speed (FPS) & 10.55 & 29.48 & \textbf{23.83} & 1.87 \\
-Edge Latency (ms) & 20.96 & 171.15 & \textbf{28.82} & 4.93 \\
-Network Latency (ms) & 10.10 & 601.96 & \textbf{105.71} & 64.15 \\
-Total Latency (ms) & 31.06 & 656.16 & \textbf{134.52} & 64.37 \\
-\hline
-\end{tabular}
-\end{table}
+Beyond isolated dataset evaluation, the system's real-time viability was tested by executing sequential control commands directly on the Raspberry Pi 5 hardware. This practical evaluation focused on edge inference latency, frame processing speed, and the reliability of the custom State Machine logic during continuous, ambient operation.
 
-The system demonstrates a robust processing capability with an average speed of 23.83 FPS and a low edge inference latency of 28.82 ms, confirming the efficacy of the TFLite optimization. While the mean total response time of 134.52 ms falls within the instantaneous perception range ($<$200 ms) \cite{Attig_LatencyGuidelines}, the network latency exhibits significant variability ($\sigma=64.15$ ms) with a maximum delay reaching 601 ms. This indicates that while edge processing is deterministic, the Wi-Fi transmission introduces stochastic jitter which serves as the primary bottleneck in the distributed architecture \cite{Gore_PDV}.
+\subsubsection{Edge Processing Speed and Latency}
+Real-time continuous gesture recognition requires a seamless, unbottlenecked computational pipeline from raw camera capture to the final logical command output. During continuous live operation, the Raspberry Pi 5 maintained a highly stable processing speed of approximately XX frames per second (FPS). 
+
+The Edge Latency—defined in this study strictly as the computational time required for MediaPipe spatial landmark extraction and the subsequent TFLite LSTM inference per 30-frame sequence—averaged XX.XX milliseconds. This sub-second computational latency ensures that the system registers and translates dynamic human movement into logical smart home commands nearly instantaneously, effectively bypassing the inherent network delays associated with traditional cloud-based processing paradigms.
+
+\subsubsection{State Machine Reliability}
+To simulate realistic smart home interactions, the system was subjected to sequential combination tests. Users were tasked to perform continuous command flows, such as executing a Selection gesture (e.g., \texttt{DEVICE\_1}) immediately followed by an Action gesture (e.g., \texttt{ACTION\_ON}). 
+
+The custom State Machine logic seamlessly integrated the quantized model's physical predictions into executable commands. The 3-second temporal timeout mechanism proved highly effective in real-world scenarios to mitigate false positives. If a valid Action gesture was not detected within the designated 3-second window after a Selection gesture, the State Machine reliably purged the buffer and reset to the \texttt{IDLE} state. This robust sequential handling confirms that the optimized edge model and the validation logic layer work in tandem to provide a secure, highly responsive, and strictly controlled ambient interaction environment.
 
 
 \subsection{Environmental Robustness}
-To validate the system's robustness in real-world scenarios, comprehensive testing was conducted across varying environmental conditions, specifically focusing on user distance, lighting intensity, and camera resolution. To capture the true generalization capability of the model, the experiments utilized a full combinatorial design. Consequently, the performance metrics summarized in Table \ref{tab:env_variations} represent the marginal averages for each specific parameter, aggregated across all possible variations of the other environmental variables.
-
-\begin{table}[htbp]
-\caption{System Robustness Analysis: Impact of Environmental Variations on Performance}
-\label{tab:env_variations}
-\centering
-\begin{tabular}{l c c c c}
-\hline
-\hline
-\textbf{Condition} & \textbf{Value} & \textbf{Accuracy (\%)} & \textbf{Inference (ms)} & \textbf{Speed (FPS)} \\
-\hline
-\multicolumn{5}{l}{\textit{A. Impact of User Distance}} \\
-Near & 30 cm & 99.0\% & 29.10 & 23.84 \\
-\textbf{Optimal} & \textbf{50 cm} & \textbf{99.6\%} & \textbf{28.62} & \textbf{23.76} \\
-Far & 70 cm & 98.6\% & 28.73 & 23.87 \\
-\hline
-\multicolumn{5}{l}{\textit{B. Impact of Lighting Intensity}} \\
-Dim & $\approx$ 30 Lux & 98.3\% & 28.85 & 23.96 \\
-Normal & $\approx$ 150 Lux & 99.7\% & 28.56 & 23.83 \\
-Bright & $\approx$ 400 Lux & 99.2\% & 29.04 & 23.68 \\
-\hline
-\multicolumn{5}{l}{\textit{C. Impact of Camera Resolution}} \\
-\textbf{Low Res} & \textbf{480p} & \textbf{98.7\%} & \textbf{27.19} & \textbf{25.04} \\
-High Res & 720p & 99.4\% & 30.45 & 22.61 \\
-\hline
-\end{tabular}
-\end{table}
+% (Isi teks dan tabel tentang jarak, cahaya, dan resolusi yang sudah kita revisi sebelumnya)

@@ -28,7 +28,7 @@ Furthermore, the close proximity between the training and validation curves in F
 
 To robustly evaluate the model's predictive performance, inferences were conducted using an unseen testing dataset comprising 400 sequential gesture samples (40 samples per class). The evaluation specifically highlights the performance of the quantized TFLite INT8 model, as it represents the exact architecture deployed on the Raspberry Pi edge device. 
 
-Fig. \ref{fig:confusion_matrix} presents the confusion matrix for the 10 physical gesture classes. The heavily concentrated diagonal demonstrates the model's exceptional capability in distinguishing complex temporal movements. Out of 400 test sequences, the model achieved a remarkable overall accuracy of 98.75\%, successfully classifying 394 samples.
+Fig. \ref{fig:confusion_matrix} presents the confusion matrix for the 10 physical gesture classes. The heavily concentrated diagonal demonstrates the model's exceptional capability in distinguishing complex temporal movements. Out of 400 test sequences, the model achieved a remarkable overall accuracy of 98.5\%, successfully classifying 394 samples.
 
 \begin{figure}[htbp]
     \centering
@@ -85,7 +85,7 @@ The evaluation metrics focused on storage footprint, runtime memory (RAM) alloca
 \hline
 Model Size & 2252 KB & 233 KB & \textbf{89.7\% Reduction} \\
 RAM Usage & $\approx$ 47.22 MB & $\approx$ 1.07 MB & \textbf{97.7\% Reduction} \\
-Accuracy & 98.75\% & 98.50\% & -0.25\% Loss \\
+Accuracy & 98.75\% & 98.50\% & -0.25\% Difference \\
 \hline
 \end{tabular}
 \end{table}
@@ -97,18 +97,122 @@ Crucially, this massive computational relief was achieved without severely compr
 
 \subsection{Sequential Interaction Performance}
 
-Beyond isolated dataset evaluation, the system's real-time viability was tested by executing sequential control commands directly on the Raspberry Pi 5 hardware. This practical evaluation focused on edge inference latency, frame processing speed, and the reliability of the custom State Machine logic during continuous, ambient operation.
+Beyond static testing, the ultimate viability of a smart home control system relies on its real-time responsiveness and sequential logic accuracy. The proposed system was subjected to a comprehensive live evaluation on the Raspberry Pi 5 to assess both its computational speed and the robustness of the State Machine in handling sequential commands (i.e., combining a Selection Gesture with an Action Gesture).
 
-\subsubsection{Edge Processing Speed and Latency}
-Real-time continuous gesture recognition requires a seamless, unbottlenecked computational pipeline from raw camera capture to the final logical command output. During continuous live operation, the Raspberry Pi 5 maintained a highly stable processing speed of approximately XX frames per second (FPS). 
+To quantify the real-time processing capabilities, the overall system speed (Frames Per Second, FPS) and the isolated edge inference latency of the TFLite model were recorded. The statistical summary is presented in Table \ref{tab:edge_speed}.
 
-The Edge Latency—defined in this study strictly as the computational time required for MediaPipe spatial landmark extraction and the subsequent TFLite LSTM inference per 30-frame sequence—averaged XX.XX milliseconds. This sub-second computational latency ensures that the system registers and translates dynamic human movement into logical smart home commands nearly instantaneously, effectively bypassing the inherent network delays associated with traditional cloud-based processing paradigms.
+\begin{table}[htbp]
+\caption{Real-Time Processing Performance on Edge Device}
+\label{tab:edge_speed}
+\centering
+\begin{tabular}{l c c c}
+\hline
+\hline
+\textbf{Metric} & \textbf{Mean} & \textbf{Min -- Max} & \textbf{Std. Dev ($\sigma$)} \\
+\hline
+Processing Speed (FPS) & 23.83 & 10.55 -- 29.48 & 1.87 \\
+Edge Latency (ms) & 28.82 & 20.96 -- 171.15 & 4.93 \\
+\hline
+\end{tabular}
+\end{table}
 
-\subsubsection{State Machine Reliability}
-To simulate realistic smart home interactions, the system was subjected to sequential combination tests. Users were tasked to perform continuous command flows, such as executing a Selection gesture (e.g., \texttt{DEVICE\_1}) immediately followed by an Action gesture (e.g., \texttt{ACTION\_ON}). 
+The system achieved an average processing speed of 23.83 FPS. This high throughput is directly attributed to the optimized edge latency, where the TFLite model required an average of only 28.82 ms to perform a complete forward pass on a $(30, 63)$ temporal sequence tensor. This result sits significantly below the 100 ms threshold typically recognized in Human-Computer Interaction (HCI) guidelines as the limit for perceived instantaneous system response \cite{Attig_LatencyGuidelines}. Consequently, this ultra-low inference latency ensures that the visual feedback loop remains imperceptible to the user, providing a fluid and intuitive contactless interaction experience.
 
-The custom State Machine logic seamlessly integrated the quantized model's physical predictions into executable commands. The 3-second temporal timeout mechanism proved highly effective in real-world scenarios to mitigate false positives. If a valid Action gesture was not detected within the designated 3-second window after a Selection gesture, the State Machine reliably purged the buffer and reset to the \texttt{IDLE} state. This robust sequential handling confirms that the optimized edge model and the validation logic layer work in tandem to provide a secure, highly responsive, and strictly controlled ambient interaction environment.
+Furthermore, the operational reliability was evaluated by testing 8 distinct logical command combinations (e.g., \texttt{D1\_ON}, \texttt{D3\_OFF}) in real-time. Fig. \ref{fig:cm_sequential} illustrates the confusion matrix for these sequential tests, highlighting the system's accuracy in correctly resolving combinations within the 3-second operational window dictated by the State Machine.
+
+\begin{figure}[htbp]
+    \centering
+    % Pastikan nama file gambar sudah sesuai di folder fig/
+    \includegraphics[width=\columnwidth]{fig/confusion_matrix_sequential.pdf}
+    \caption{Confusion Matrix of the sequential smart home commands during real-time live evaluation.}
+    \label{fig:cm_sequential}
+\end{figure}
+
+The corresponding classification metrics for this real-world sequential testing are detailed in Table \ref{tab:sequential_metrics}.
+
+\begin{table}[htbp]
+\caption{Evaluation Metrics for Sequential Command Execution}
+\label{tab:sequential_metrics}
+\centering
+\begin{tabular}{l c c c}
+\hline
+\hline
+\textbf{Command Sequence} & \textbf{Precision} & \textbf{Recall} & \textbf{F1-Score} \\
+\hline
+\texttt{D1\_ON}  & 1.00 & 0.99 & 0.99 \\
+\texttt{D1\_OFF} & 0.99 & 0.99 & 0.99 \\
+\texttt{D2\_ON}  & 0.98 & 0.99 & 0.99 \\
+\texttt{D2\_OFF} & 0.98 & 0.99 & 0.99 \\
+\texttt{D3\_ON}  & 0.99 & 0.98 & 0.99 \\
+\texttt{D3\_OFF} & 1.00 & 0.99 & 0.99 \\
+\texttt{D4\_ON}  & 0.99 & 0.99 & 0.99 \\
+\texttt{D4\_OFF} & 1.00 & 1.00 & 1.00 \\
+\hline
+\textbf{Macro Average} & \textbf{0.99} & \textbf{0.99} & \textbf{0.99} \\
+\hline
+\end{tabular}
+\end{table}
+
+The system demonstrated exceptional operational stability, maintaining a macro-average F1-Score of 0.99 across all combined sequences. This proves that the integration of the quantized LSTM model with the strict temporal State Machine logic effectively neutralizes false positive triggers, resulting in a highly reliable, always-on smart home control interface.
+
 
 
 \subsection{Environmental Robustness}
-% (Isi teks dan tabel tentang jarak, cahaya, dan resolusi yang sudah kita revisi sebelumnya)
+
+The final evaluation phase assesses the system's reliability across varying environmental conditions, specifically focusing on distance, lighting intensity, and camera resolution. These tests validate the robustness of the MediaPipe-based landmark extraction and the generalization capabilities of the LSTM model.
+
+\subsubsection{Distance Variation}
+The system was tested at three distinct distances: 30 cm (Close), 50 cm (Ideal), and 70 cm (Far), with 90 trials performed for each gesture class per variation. As shown in Table \ref{tab:robustness_distance}, the model maintained high accuracy across all ranges, achieving a peak mean accuracy of 99.6\% at the ideal distance of 50 cm. Even at 70 cm, the accuracy remained robust at 98.6\%. This consistency confirms that the geometric normalization of hand landmarks relative to the wrist effectively mitigates the impact of hand-scale variations caused by distance changes.
+
+\begin{table}[htbp]
+\caption{System Performance Across Distance Variations}
+\label{tab:robustness_distance}
+\centering
+\begin{tabular}{l c c c}
+\hline
+\hline
+\textbf{Distance} & \textbf{Mean Accuracy} & \textbf{Mean FPS} & \textbf{Edge Latency} \\
+\hline
+30 cm (Close) & 99.0\% & 23.84 & 29.10 ms \\
+50 cm (Ideal) & 99.6\% & 23.76 & 28.62 ms \\
+70 cm (Far)   & 98.6\% & 23.87 & 28.73 ms \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Lighting Intensity}
+To evaluate performance in non-ideal lighting, the system was tested under Dim (±30 Lux), Normal (±150 Lux), and Bright (±400 Lux) conditions (90 trials per gesture class). The results in Table \ref{tab:robustness_light} show that while accuracy slightly dipped in dim environments (98.3\%), the system remained highly reliable. The stability of the processing speed (avg. 23.8 FPS) across all lighting levels indicates that the computational pipeline is not bottlenecked by variations in image exposure.
+
+\begin{table}[htbp]
+\caption{System Performance Across Lighting Intensities}
+\label{tab:robustness_light}
+\centering
+\begin{tabular}{l c c c}
+\hline
+\hline
+\textbf{Intensity} & \textbf{Mean Accuracy} & \textbf{Mean FPS} & \textbf{Edge Latency} \\
+\hline
+Dim (30 Lux)    & 98.3\% & 23.96 & 28.85 ms \\
+Normal (150 Lux) & 99.7\% & 23.83 & 28.56 ms \\
+Bright (400 Lux) & 99.2\% & 23.68 & 29.04 ms \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Camera Resolution}
+The impact of input resolution was analyzed by comparing 480p (SD) and 720p (HD) streams, with 135 trials performed per gesture class. As summarized in Table \ref{tab:robustness_res}, higher resolution (720p) provided a superior mean accuracy of 99.4\%. However, this came with a slight increase in edge latency (30.45 ms) compared to 480p (27.19 ms). Despite the higher data density at 720p, the system maintained a functional frame rate of 22.61 FPS, proving that the Raspberry Pi 5 can efficiently handle HD streams for real-time inference.
+
+\begin{table}[htbp]
+\caption{Comparison of Performance Across Resolutions}
+\label{tab:robustness_res}
+\centering
+\begin{tabular}{l c c c}
+\hline
+\hline
+\textbf{Resolution} & \textbf{Mean Accuracy} & \textbf{Mean FPS} & \textbf{Edge Latency} \\
+\hline
+480p (Standard) & 98.7\% & 25.04 & 27.19 ms \\
+720p (High)     & 99.4\% & 22.61 & 30.45 ms \\
+\hline
+\end{tabular}
+\end{table}

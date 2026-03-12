@@ -44,7 +44,18 @@ As illustrated in Fig. \ref{fig:software_pipeline}, the data processing flow con
 
 \subsection{Gesture Vocabulary and Data Preprocessing}
 
+The proposed system is designed to facilitate intuitive multi-device control within a smart home environment. As illustrated in Fig. \ref{fig:device_topology}, the Raspberry Pi 5 serves as the central processing unit, managing interaction flows for four distinct target appliances: a smart light (Device 1), an electric fan (Device 2), a smart light (Device 3), and a smart plug / smart power socket (Device 4). This multi-device configuration necessitates a robust interaction logic to prevent unintended activations.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=1\columnwidth]{fig/device_diagram.png}
+    \caption{Control topology illustrating the Raspberry Pi 5 as the central hub managing four heterogeneous smart home devices via the local network.}
+    \label{fig:device_topology}
+\end{figure}
+
 To accommodate natural human movement variability and provide initial-state invariance, the system utilizes a 10-class physical gesture dataset mapped to 6 logical control commands. As detailed in Table \ref{tab:gesture_classes}, the vocabulary includes Action Gestures for state toggling and Selection Gestures for device targeting. Providing two physical variations for each Selection Gesture, originating from either a closed fist (\texttt{close\_to\_x}) or an open palm (\texttt{open\_to\_x}), ensures that users can transition fluidly between commands without returning to a rigid, predefined neutral pose.
+
+
 
 \begin{table}[htbp]
 \caption{Definition of Physical Gestures and Logical Command Mapping}
@@ -70,7 +81,7 @@ To accommodate natural human movement variability and provide initial-state inva
 \end{tabular}
 \end{table}
 
-Following sequence capture, spatial feature extraction is performed using the MediaPipe Hands framework. As illustrated in Fig. \ref{fig:mediapipe_landmarks}, MediaPipe identifies and extracts the spatial coordinates of 21 3D hand landmarks for each individual video frame \cite{han2022mediapipe}. 
+Following sequence capture, spatial feature extraction is performed using the MediaPipe Hands framework. As illustrated in Fig. \ref{fig:mediapipe_landmarks}, MediaPipe identifies and extracts the spatial coordinates of 21 3D hand landmarks for each individual video frame \cite{han2022mediapipe}.
 
 \begin{figure}[!t]
     \centering

@@ -100,18 +100,20 @@ X =
 v_1 \\
 v_2 \\
 \vdots \\
-v_{30}
+v_{m}
 \end{bmatrix}
 =
 \begin{bmatrix}
-x_{1,1} & x_{1,2} & \cdots & x_{1,63} \\
-x_{2,1} & x_{2,2} & \cdots & x_{2,63} \\
-\vdots & \vdots & \ddots & \vdots \\
-x_{30,1} & x_{30,2} & \cdots & x_{30,63}
+\mathbf{x}_{11}, \mathbf{y}_{11}, \mathbf{z}_{11} & \cdots & \mathbf{x}_{1n}, \mathbf{y}_{1n}, \mathbf{z}_{1n} \\
+\mathbf{x}_{21}, \mathbf{y}_{21}, \mathbf{z}_{21} & \cdots & \mathbf{x}_{2n}, \mathbf{y}_{2n}, \mathbf{z}_{2n} \\
+\vdots & \ddots & \vdots \\
+\mathbf{x}_{m1}, \mathbf{y}_{m1}, \mathbf{z}_{m1} & \cdots & \mathbf{x}_{mn}, \mathbf{y}_{mn}, \mathbf{z}_{mn}
 \end{bmatrix}
 \end{equation}
 
-This matrix structure dictates the input layer dimensions of the subsequent LSTM architecture, where the tensor shape of $(30, 63)$ corresponds directly to the temporal sequence length ($T=30$) and the spatial feature dimensionality ($D=63$) per time step, utilizing double-precision floating-point formatting (\texttt{float64}) for computational accuracy.
+The resulting matrix $X$ represents a complete gesture sequence where $m$ denotes the total number of temporal steps and $n$ represents the total number of extracted hand landmarks. In this study, the sequence length is defined as $m = 30$ frames, while the spatial features consist of $n = 21$ landmarks. Since each landmark is represented by three-dimensional bold Cartesian coordinates $(\mathbf{x}, \mathbf{y}, \mathbf{z})$, each row in the matrix $X$ contains $3n$ numerical values. 
+
+Consequently, the final input tensor has a shape of $(m, 3n)$, which in this configuration corresponds to a $(30, 63)$ dimensionality. This matrix structure is essential for the subsequent Stacked LSTM architecture to learn the hierarchical temporal patterns of the dynamic gestures, utilizing double-precision floating-point formatting (\texttt{float64}) to maintain spatial precision across all $m$ time steps.
 
 
 \subsection{Deep Learning Architecture}

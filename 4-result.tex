@@ -118,8 +118,6 @@ Edge Latency (ms) & 28.82 & 20.96 -- 171.15 & 4.93 \\
 
 The system achieved an average processing speed of 23.83 FPS. This high throughput is directly attributed to the optimized edge latency, where the TFLite model required an average of only 28.82 ms to perform a complete forward pass on a $(30, 63)$ temporal sequence tensor. This result sits significantly below the 100 ms threshold typically recognized in Human-Computer Interaction (HCI) guidelines as the limit for perceived instantaneous system response \cite{Attig_LatencyGuidelines}. Consequently, this ultra-low inference latency ensures that the visual feedback loop remains imperceptible to the user, providing a fluid and intuitive contactless interaction experience.
 
-Furthermore, the operational reliability was evaluated by testing 8 distinct logical command combinations (e.g., \texttt{D1\_ON}, \texttt{D3\_OFF}) in real-time. Fig. \ref{fig:cm_sequential} illustrates the confusion matrix for these sequential tests, highlighting the system's accuracy in correctly resolving combinations within the 3-second operational window dictated by the State Machine.
-
 \begin{figure}[htbp]
     \centering
     % Pastikan nama file gambar sudah sesuai di folder fig/
@@ -127,6 +125,9 @@ Furthermore, the operational reliability was evaluated by testing 8 distinct log
     \caption{Confusion Matrix of the sequential smart home commands during real-time live evaluation.}
     \label{fig:cm_sequential}
 \end{figure}
+
+Furthermore, the operational reliability was evaluated by testing 8 distinct logical command combinations (e.g., \texttt{D1\_ON}, \texttt{D3\_OFF}) in real-time. Fig. \ref{fig:cm_sequential} illustrates the confusion matrix for these sequential tests, highlighting the system's accuracy in correctly resolving combinations within the 3-second operational window dictated by the State Machine.
+
 
 The corresponding classification metrics for this real-world sequential testing are detailed in Table \ref{tab:sequential_metrics}.
 

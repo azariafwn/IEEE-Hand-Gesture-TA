@@ -26,7 +26,7 @@ Furthermore, the close proximity between the training and validation curves in F
 
 \subsection{Gesture Classification Accuracy}
 
-To robustly evaluate the model's predictive performance, inferences were conducted using an unseen testing dataset comprising 400 sequential gesture samples (40 samples per class). The evaluation specifically highlights the performance of the quantized TFLite INT8 model, as it represents the exact architecture deployed on the Raspberry Pi edge device. 
+Inferences were conducted using an unseen testing dataset comprising 400 sequential gesture samples (40 samples per class) to robustly evaluate the model's predictive performance. The evaluation specifically highlights the performance of the quantized TFLite INT8 model, as it represents the exact architecture deployed on the Raspberry Pi edge device.
 
 Fig. \ref{fig:confusion_matrix} presents the confusion matrix for the 10 physical gesture classes. The heavily concentrated diagonal demonstrates the model's exceptional capability in distinguishing complex temporal movements. Out of 400 test sequences, the model achieved a remarkable overall accuracy of 98.5\%, successfully classifying 394 samples.
 
@@ -97,9 +97,33 @@ Crucially, this massive computational relief was achieved without severely compr
 
 \subsection{Sequential Interaction Performance}
 
-Beyond static testing, the ultimate viability of a smart home control system relies on its real-time responsiveness and sequential logic accuracy. The proposed system was subjected to a comprehensive live evaluation on the Raspberry Pi 5 to assess both its computational speed and the robustness of the State Machine in handling sequential commands (i.e., combining a Selection Gesture with an Action Gesture).
+The ultimate viability of a smart home control system relies on its real-time responsiveness and sequential logic accuracy, extending beyond static testing. The proposed system was subjected to a comprehensive live evaluation on the Raspberry Pi 5 to assess both its computational speed and the robustness of the State Machine in handling sequential commands, such as combining a Selection Gesture with an Action Gesture.
 
-To quantify the real-time processing capabilities, the overall system speed (Frames Per Second, FPS) and the isolated edge inference latency of the TFLite model were recorded. The statistical summary is presented in Table \ref{tab:edge_speed}.
+The evaluation of real-time sequential interactions requires a clear mapping between the physical gesture sequences recognized by the LSTM model and the final logical commands executed by the State Machine. Each command sequence is composed of two distinct phases: an initial Action Gesture followed by a specific Selection Gesture. Table \ref{tab:logical_mapping} details the specific combinations used to trigger the eight smart home commands. For example, the logical command \texttt{D1\_ON} is achieved by executing the \texttt{close\_to\_open\_palm} gesture (Action) immediately followed by the \texttt{open\_to\_one} gesture (Selection). This deterministic logic ensures that device activation is intentional and mediated by the integrated State Machine. Operational reliability was subsequently evaluated by testing these 8 distinct logical command combinations in real-time.
+
+\begin{table}[htbp]
+\caption{Mapping of Physical Gesture Sequences to Logical Commands}
+\label{tab:logical_mapping}
+\centering
+\begin{tabular}{c l l c}
+\hline
+\hline
+\textbf{Action Gesture} & \textbf{Selection Gesture} & \textbf{Logical Command} \\
+\hline
+\texttt{close\_to\_open\_palm} & \texttt{open\_to\_one}   & \texttt{D1\_ON} \\
+\texttt{open\_to\_close\_palm} & \texttt{close\_to\_one}  & \texttt{D1\_OFF} \\
+\texttt{close\_to\_open\_palm} & \texttt{open\_to\_two}   & \texttt{D2\_ON} \\
+\texttt{open\_to\_close\_palm} & \texttt{close\_to\_two}  & \texttt{D2\_OFF} \\
+\texttt{close\_to\_open\_palm} & \texttt{open\_to\_three} & \texttt{D3\_ON} \\
+\texttt{open\_to\_close\_palm} & \texttt{close\_to\_three} & \texttt{D3\_OFF} \\
+\texttt{close\_to\_open\_palm} & \texttt{open\_to\_four}  & \texttt{D4\_ON} \\
+\texttt{open\_to\_close\_palm} & \texttt{close\_to\_four} & \texttt{D4\_OFF} \\
+\hline
+\end{tabular}
+\end{table}
+
+
+The overall system speed (Frames Per Second, FPS) and the isolated edge inference latency of the TFLite model were recorded to quantify the real-time processing capabilities. Table \ref{tab:edge_speed} presents the statistical summary of these measurements.
 
 \begin{table}[htbp]
 \caption{Real-Time Processing Performance on Edge Device}
@@ -154,9 +178,9 @@ The corresponding classification metrics for this real-world sequential testing 
 \end{tabular}
 \end{table}
 
-The system demonstrated exceptional operational stability, maintaining a macro-average F1-Score of 0.99 across all combined sequences. This proves that the integration of the quantized LSTM model with the strict temporal State Machine logic effectively neutralizes false positive triggers, resulting in a highly reliable, always-on smart home control interface.
+The system demonstrated exceptional operational stability, maintaining a macro-average F1-Score of 0.99 across all combined sequences. This performance proves that the integration of the quantized LSTM model with the strict temporal State Machine logic effectively neutralizes false positive triggers, resulting in a highly reliable smart home control interface. 
 
-
+Minimal misclassifications observed in the sequential evaluation are primarily caused by a combination of high spatial feature similarity and the dynamics of real-time hand movement. These errors occur when the Stacked LSTM model encounters ambiguous frames during finger-unfolding transitions, where the structural overlap of hand landmarks is compounded by motion blur or suboptimal hand orientation relative to the camera. Rapid dynamic movements can momentarily blur the distinction between similar gestures, especially when certain fingers are only partially extended. These transient classification errors are effectively mitigated by the 3-second operational window of the State Machine, which requires a precise and deliberate sequence of gestures to execute a final command. The overall system remains highly robust for daily smart home interactions despite these minor anomalies, as evidenced by the consistently high precision and recall values.
 
 \subsection{Environmental Robustness}
 

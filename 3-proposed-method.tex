@@ -53,8 +53,10 @@ The proposed system is designed to facilitate intuitive multi-device control wit
     \label{fig:device_topology}
 \end{figure}
 
-To accommodate natural human movement variability and provide initial-state invariance, the system utilizes a 10-class physical gesture dataset mapped to 6 logical control commands. As detailed in Table \ref{tab:gesture_classes}, the vocabulary includes Action Gestures for state toggling and Selection Gestures for device targeting. Providing two physical variations for each Selection Gesture, originating from either a closed fist (\texttt{close\_to\_x}) or an open palm (\texttt{open\_to\_x}), ensures that users can transition fluidly between commands without returning to a rigid, predefined neutral pose.
 
+A comprehensive dataset was constructed involving 8 different subjects to capture natural human movement variability and develop a high-generalization model. Data acquisition was performed under diverse environmental conditions, including variations in lighting (bright, ambient, and low-light) and non-uniform backgrounds to prevent model overfitting. The distance between the subjects' hands and the camera was varied within a range of 40 cm to 60 cm, with the hand positioned dynamically across different areas of the frame. This proses resulted in a total of 1,998 samples, with approximately 200 samples per gesture class, providing a balanced distribution for training and evaluation.
+
+The system utilizes a 10-class physical gesture dataset mapped to 6 logical control commands to provide initial-state invariance. As detailed in Table \ref{tab:gesture_classes}, the vocabulary includes Action Gestures for state toggling and Selection Gestures for device targeting. Users can transition fluidly between commands without returning to a rigid, predefined neutral pose by providing two physical variations for each Selection Gesture, originating from either a closed fist (\texttt{close\_to\_x}) or an open palm (\texttt{open\_to\_x}).
 
 
 \begin{table}[htbp]
@@ -90,9 +92,9 @@ Following sequence capture, spatial feature extraction is performed using the Me
     \label{fig:mediapipe_landmarks}
 \end{figure}
 
-To ensure the model remains robust and invariant to the user's distance from the camera and hand size variations, the raw Cartesian coordinates $(x, y, z)$ of each landmark are geometrically normalized relative to the wrist point (Landmark 0). Once extracted and normalized, the spatial coordinates from the 21 landmarks are flattened into a single one-dimensional vector per frame. Specifically, the 21 points multiplied by 3 coordinates yield a 63-dimensional spatial feature vector, denoted as $v_t \in \mathbb{R}^{63}$, which represents the complete hand posture at time step $t$.
+The raw Cartesian coordinates $(x, y, z)$ of each landmark are geometrically normalized relative to the wrist point (Landmark 0) to ensure the model remains robust and invariant to the user's distance from the camera and hand size variations. Once extracted and normalized, the spatial coordinates from the 21 landmarks are flattened into a single one-dimensional vector per frame. Specifically, the 21 points multiplied by 3 coordinates yield a 63-dimensional spatial feature vector, denoted as $v_t \in \mathbb{R}^{63}$, which represents the complete hand posture at time step $t$.
 
-To capture the temporal dynamics of the movement, these frame-level vectors are accumulated sequentially over time. In this study, a complete gesture sequence is defined by a temporal window of $T = 30$ consecutive frames. Consequently, the final preprocessed data fed into the Deep Learning model is structured as a two-dimensional numerical tensor, $X$, representing the sequence of spatial vectors:
+These frame-level vectors are accumulated sequentially over time to capture the temporal dynamics of the movement. In this study, a complete gesture sequence is defined by a temporal window of $T = 30$ consecutive frames. Consequently, the final preprocessed data fed into the Deep Learning model is structured as a two-dimensional numerical tensor, $X$, representing the sequence of spatial vectors:
 
 \begin{equation}
 X = 
@@ -118,7 +120,7 @@ Consequently, the final input tensor has a shape of $(m, 3n)$, which in this con
 
 \subsection{Deep Learning Architecture}
 
-To effectively learn the temporal dependencies inherent in dynamic hand movements, this study employs a Stacked Long Short-Term Memory (LSTM) network. LSTM are explicitly designed to overcome the vanishing gradient problem in standard recurrent networks, making them highly effective for processing the sequentially buffered $(30, 63)$ spatial feature tensors \cite{sengupta2020review}. The use of a stacked architecture allows the model to build a hierarchical representation of the temporal data, where deeper layers capture higher-level abstractions of the gesture dynamics \cite{yu2019review}. The complete layer-by-layer configuration of the proposed network is detailed in Table \ref{tab:model_architecture}.
+This study employs a Stacked Long Short-Term Memory (LSTM) network to effectively learn the temporal dependencies inherent in dynamic hand movements. LSTM networks are explicitly designed to overcome the vanishing gradient problem in standard recurrent networks, making them highly effective for processing the sequentially buffered $(30, 63)$ spatial feature tensors \cite{sengupta2020review}. The model builds a hierarchical representation of the temporal data through a stacked architecture, where deeper layers capture higher-level abstractions of the gesture dynamics \cite{yu2019review}. The complete layer-by-layer configuration of the proposed network is detailed in Table \ref{tab:model_architecture}.
 
 \begin{table}[htbp]
 \caption{Detailed Architecture of the Proposed Stacked LSTM Model}
@@ -144,7 +146,7 @@ Dense 3 (Output) & 10 units & \texttt{softmax} & $(10)$ \\
 
 As shown in the architectural summary, the core feature extraction engine consists of three stacked LSTM layers with 64, 128, and 64 units, respectively. The first two LSTM layers are configured to return the full sequence, allowing the subsequent layer to analyze the temporal progression comprehensively. The final LSTM layer extracts the most salient temporal features and returns a flattened 64 dimensional vector. 
 
-To mitigate the risk of overfitting during training, a common challenge in deep sequence models, Dropout layers with a rate of 0.5 are strategically inserted after the first and second LSTM layers. This stochastic regularization technique randomly drops 50\% of the neural connections during each training epoch, forcing the network to learn robust, generalized representations rather than memorizing the training data \cite{labach2019survey}.
+Dropout layers with a rate of 0.5 are strategically inserted after the first and second LSTM layers to mitigate the risk of overfitting during training, which is a common challenge in deep sequence models. This stochastic regularization technique randomly drops 50\% of the neural connections during each training epoch. The network is thus forced to learn robust, generalized representations rather than memorizing the training data \cite{labach2019survey}.
 
 Following the recurrent stages, the network utilizes a deep classifier composed of two dense layers with 64 and 32 units, employing the Rectified Linear Unit (ReLU) activation function for non-linear transformations. ReLU is chosen for its ability to overcome the vanishing gradient problem in deep networks and its computational efficiency compared to sigmoidal functions \cite{dubey2022activation}. Finally, the output layer consists of 10 dense units with a \texttt{softmax} activation function, which provides a normalized probability distribution suitable for multi-class classification tasks. This configuration computes the probability distribution across the 10 specific physical gesture classes (as defined in Table \ref{tab:gesture_classes}).
 
@@ -152,9 +154,9 @@ Following the recurrent stages, the network utilizes a deep classifier composed 
 
 \subsection{Edge Optimization and Deployment}
 
-To achieve real-time inference on the resource-constrained Raspberry Pi 5, the trained 32-bit floating-point (FP32) Keras model undergoes post-training quantization. Specifically, the model is converted into the TensorFlow Lite (TFLite) format utilizing 8-bit integer (INT8) quantization, a framework designed to enable deep learning inference on ultra-low-power embedded systems \cite{david2021tflite}. This optimization strategy fundamentally reduces the memory footprint and accelerates inference speed by substituting computationally expensive floating-point arithmetic with efficient integer operations, which are highly optimized for ARM-based embedded processors \cite{orasan2022quantization}.
+The trained 32-bit floating-point (FP32) Keras model undergoes post-training quantization to achieve real-time inference on the resource-constrained Raspberry Pi 5. Specifically, the model is converted into the TensorFlow Lite (TFLite) format utilizing 8-bit integer (INT8) quantization, which is a framework designed to enable deep learning inference on ultra-low-power embedded systems \cite{david2021tflite}. This optimization strategy fundamentally reduces the memory footprint and accelerates inference speed by substituting computationally expensive floating-point arithmetic with efficient integer operations optimized for ARM-based embedded processors \cite{orasan2022quantization}.
 
-For the deployment phase, the entire software stack is containerized using Docker to ensure dependency isolation and cross-platform reproducibility. While containerization introduces a negligible computational overhead, it guarantees stable, continuous operation within the edge computing environment without the risk of system library conflicts \cite{potdar2020docker}.
+The entire software stack is containerized using Docker during the deployment phase to ensure dependency isolation and cross-platform reproducibility. While containerization introduces a negligible computational overhead, it guarantees stable, continuous operation within the edge computing environment without the risk of system library conflicts \cite{potdar2020docker}.
 
 Finally, to translate raw model predictions into robust smart home commands, the deployment incorporates a custom State Machine logic layer. This component mitigates false positives by enforcing a strict chronological sequence: a Selection Gesture (e.g., pointing to \texttt{DEVICE\_1}) must be followed by an Action Gesture (e.g., \texttt{ACTION\_ON}). The integration of a Finite State Machine (FSM) provides a deterministic framework to manage complex gesture transitions and reduce erroneous command triggers by validating the logical flow of user interactions \cite{noparlik2023hand}. Furthermore, a temporal timeout mechanism is implemented; if a valid Action Gesture is not detected within a 3-second window following a device selection, the system autonomously resets to an \texttt{IDLE} state. This logic discards pending operations, thereby ensuring interaction safety and preventing unintended appliance activation.
 
@@ -162,7 +164,7 @@ Finally, to translate raw model predictions into robust smart home commands, the
 
 \subsection{Evaluation Metrics}
 
-To rigorously assess the performance of the proposed dynamic gesture classification model, a comprehensive evaluation is conducted using standard machine learning metrics derived from a confusion matrix. Relying solely on overall accuracy can be misleading in multi-class classification tasks; therefore, Precision, Recall, and the F1-Score are employed to analyze the model's predictive reliability across all 10 physical gesture classes.
+A comprehensive evaluation is conducted using standard machine learning metrics derived from a confusion matrix to rigorously assess the performance of the proposed dynamic gesture classification model. Relying solely on overall accuracy can be misleading in multi-class classification tasks; therefore, Precision, Recall, and the F1-Score are employed to analyze the model's predictive reliability across all 10 physical gesture classes.
 
 The foundation of these metrics relies on four outcomes: True Positives ($TP$), True Negatives ($TN$), False Positives ($FP$), and False Negatives ($FN$). Based on these components, the evaluation metrics are mathematically defined as follows:
 

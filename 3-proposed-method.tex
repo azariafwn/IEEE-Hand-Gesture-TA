@@ -13,39 +13,6 @@ As illustrated in Fig. \ref{fig:software_pipeline}, the data processing flow con
     \item \textbf{Inference and State Management:} Once the buffer reaches its capacity, the temporal sequence is fed into the quantized TFLite LSTM model. The resulting predicted gesture class is then processed by a State Machine to validate the command, handle timeouts, and trigger the corresponding smart home logic output.
 \end{enumerate}
 
-\begin{figure*}[!t]
-\centering
-\begin{tikzpicture}[
-    node distance=1.5cm and 1.2cm,
-    box/.style={rectangle, draw=black, thick, fill=blue!5, text width=2.5cm, align=center, minimum height=1.5cm, font=\small},
-    arrow/.style={-{Stealth[scale=1.2]}, thick},
-    % Tambahkan gaya khusus untuk label panah agar bisa wrap text
-    arrowlabel/.style={font=\scriptsize, align=center, text width=1.5cm} 
-]
-
-% Definisi Block Diagram [cite: 354, 355, 357, 360, 362]
-\node (cam) [box, fill=gray!10] {Video Capture\\(30 FPS)};
-\node (mp) [box, right=of cam] {MediaPipe\\Landmark Extraction};
-\node (buf) [box, right=of mp] {Sequence Buffering\\(30 Frames)};
-\node (lstm) [box, right=of buf, fill=green!10] {TFLite LSTM\\Inference};
-\node (sm) [box, right=of lstm, fill=orange!10] {State Machine\\Logic Output};
-
-% Definisi Panah dan Label dengan gaya arrowlabel [cite: 353, 356, 358, 361]
-\draw [arrow] (cam) -- node[above, arrowlabel] {Raw\\Frame} (mp);
-\draw [arrow] (mp) -- node[above, arrowlabel] {21 3D\\Points} (buf);
-\draw [arrow] (buf) -- node[above, arrowlabel] {Sequence} (lstm);
-\draw [arrow] (lstm) -- node[above, arrowlabel] {Class\\Label} (sm);
-
-\end{tikzpicture}
-\caption{Software pipeline architecture illustrating the sequential data flow from raw video capture to final logic output on the edge device.}
-\label{fig:software_pipeline}
-\end{figure*}
-
-
-\subsection{Gesture Vocabulary and Data Preprocessing}
-
-The proposed system is designed to facilitate intuitive multi-device control within a smart home environment. As illustrated in Fig. \ref{fig:device_topology}, the Raspberry Pi 5 serves as the central processing unit, managing interaction flows for four distinct target appliances: a smart light (Device 1), an electric fan (Device 2), a smart light (Device 3), and a smart plug / smart power socket (Device 4). This multi-device configuration necessitates a robust interaction logic to prevent unintended activations.
-
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=1\columnwidth]{fig/device_diagram.png}
@@ -53,10 +20,41 @@ The proposed system is designed to facilitate intuitive multi-device control wit
     \label{fig:device_topology}
 \end{figure}
 
+The Raspberry Pi 5 serves as the central hub managing interaction flows for four distinct target appliances within the smart home network, as shown in Fig. \ref{fig:device_topology}. These devices include a smart light (Device 1), an electric fan (Device 2), a second smart light (Device 3), and a smart plug (Device 4). The integration of this multi-device configuration within the software pipeline ensures a centralized and robust control logic to prevent unintended device activations.
 
-A comprehensive dataset was constructed involving 8 different subjects to capture natural human movement variability and develop a high-generalization model. Data acquisition was performed under diverse environmental conditions, including variations in lighting (bright, ambient, and low-light) and non-uniform backgrounds to prevent model overfitting. The distance between the subjects' hands and the camera was varied within a range of 40 cm to 60 cm, with the hand positioned dynamically across different areas of the frame. This proses resulted in a total of 1,998 samples, with approximately 200 samples per gesture class, providing a balanced distribution for training and evaluation.
 
-The system utilizes a 10-class physical gesture dataset mapped to 6 logical control commands to provide initial-state invariance. As detailed in Table \ref{tab:gesture_classes}, the vocabulary includes Action Gestures for state toggling and Selection Gestures for device targeting. Users can transition fluidly between commands without returning to a rigid, predefined neutral pose by providing two physical variations for each Selection Gesture, originating from either a closed fist (\texttt{close\_to\_x}) or an open palm (\texttt{open\_to\_x}).
+
+\subsection{Gesture Vocabulary and Data Preprocessing}
+
+A comprehensive dataset was constructed involving 8 different subjects to capture natural human movement variability and develop a high-generalization model. Data acquisition was performed under diverse environmental conditions, including variations in lighting and non-uniform backgrounds to prevent model overfitting. The distance between the subjects' hands and the camera was varied within a range of 40 cm to 60 cm. This proses resulted in a total of 1,998 samples, providing a balanced distribution for training and evaluation.
+
+The system utilizes a 10-class physical gesture dataset mapped to 6 logical control commands to provide initial-state invariance. As detailed in Fig. \ref{fig:visual_gesture}, these gestures are represented as dynamic sequences of 30 frames, capturing the full temporal progression of each movement. The vocabulary is divided into two primary categories:
+
+\begin{itemize}
+    \item \textbf{Action Gestures:} These gestures are used for state toggling (e.g., \texttt{ACTION\_ON} and \texttt{ACTION\_OFF}). For instance, the \texttt{close\_to\_open\_palm} sequence captures the gradual unfolding of a fist into an open palm (Fig. \ref{fig:action_visual}), providing the critical temporal data required to trigger a command.
+    \item \textbf{Selection Gestures:} These gestures are utilized for device targeting. For example, the \texttt{open\_to\_two} sequence visualizes the intentional transition of extending two fingers from a palm position to select a specific appliance (Fig. \ref{fig:selection_visual}). 
+\end{itemize}
+
+\begin{figure}[htbp]
+    \centering
+    \begin{subfigure}[b]{0.48\columnwidth}
+        \centering
+        \includegraphics[width=\textwidth]{fig/action_visual.png}
+        \caption{Action: \texttt{close\_to\_open}}
+        \label{fig:action_visual}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\columnwidth}
+        \centering
+        \includegraphics[width=\textwidth]{fig/selection_visual.png}
+        \caption{Selection: \texttt{open\_to\_two}}
+        \label{fig:selection_visual}
+    \end{subfigure}
+    \caption{Visual representation of the 30 FPS dynamic gesture sequences: (a) Action Gesture (\texttt{close\_to\_open\_palm}) and (b) Selection Gesture (\texttt{open\_to\_two}).}
+    \label{fig:visual_gesture}
+\end{figure}
+
+By training on sequential data instead of static poses, the Stacked LSTM model can effectively recognize movement patterns and minimize false activations caused by transient hand movements. The complete mapping between these physical gesture classes and their respective logical labels is detailed in Table \ref{tab:gesture_classes}.
 
 
 \begin{table}[htbp]

@@ -1,5 +1,35 @@
 \section{Related Work}
 
+\begin{figure*}[!t]
+\centering
+\begin{tikzpicture}[
+    node distance=1.5cm and 1.2cm,
+    box/.style={rectangle, draw=black, thick, fill=blue!5, text width=2.5cm, align=center, minimum height=1.5cm, font=\small},
+    arrow/.style={-{Stealth[scale=1.2]}, thick},
+    % Tambahkan gaya khusus untuk label panah agar bisa wrap text
+    arrowlabel/.style={font=\scriptsize, align=center, text width=1.5cm} 
+]
+
+% Definisi Block Diagram [cite: 354, 355, 357, 360, 362]
+\node (cam) [box, fill=gray!10] {Video Capture\\(30 FPS)};
+\node (mp) [box, right=of cam] {MediaPipe\\Landmark Extraction};
+\node (buf) [box, right=of mp] {Sequence Buffering\\(30 Frames)};
+\node (lstm) [box, right=of buf, fill=green!10] {TFLite LSTM\\Inference};
+\node (sm) [box, right=of lstm, fill=orange!10] {State Machine\\Logic Output};
+
+% Definisi Panah dan Label dengan gaya arrowlabel [cite: 353, 356, 358, 361]
+\draw [arrow] (cam) -- node[above, arrowlabel] {Raw\\Frame} (mp);
+\draw [arrow] (mp) -- node[above, arrowlabel] {21 3D\\Points} (buf);
+\draw [arrow] (buf) -- node[above, arrowlabel] {Sequence} (lstm);
+\draw [arrow] (lstm) -- node[above, arrowlabel] {Class\\Label} (sm);
+
+\end{tikzpicture}
+\caption{Software pipeline architecture illustrating the sequential data flow from raw video capture to final logic output on the edge device.}
+\label{fig:software_pipeline}
+\end{figure*}
+
+
+
 Hand gesture recognition for smart home automation has been widely explored using various computer vision and machine learning approaches. Kurian et al. \cite{kurian2023visual} developed a vision-based home automation system utilizing MediaPipe on a Raspberry Pi. Their system successfully classified static poses, such as American Sign Language (ASL) alphabets 'A' and 'B', achieving over 95\% accuracy. However, relying solely on static spatial features limits the intuitiveness required for complex commands, necessitating a structural shift towards continuous temporal sequence recognition.
 
 To address the limitations of static frame classification, deep learning models capable of processing temporal data, such as Long Short-Term Memory (LSTM) networks, have been widely adopted. Gurrala et al. \cite{gurrala2025lstm} demonstrated the effectiveness of LSTM for sequential gesture recognition in a sign language translation system, achieving an impressive baseline accuracy of 99.6\%. While this study validated the superior classification performance of LSTM, it primarily focused on raw accuracy without providing a comprehensive evaluation of computational efficiency or detailed class-level evaluation metrics (e.g., Precision, Recall, and F1-Score) that are critical for continuous local processing.
@@ -7,3 +37,5 @@ To address the limitations of static frame classification, deep learning models 
 Recently, Lopes et al. \cite{lopes2026geco} introduced GECO, a real-time computer vision-assisted gesture controller for smart homes. Deployed on Android mobile devices, the system utilizes MediaPipe to enable contactless control with low inference latency. However, its reliance on a mobile smartphone paradigm introduces significant computational overhead inherent to complex operating systems. Running an "always-on" continuous sequence classification model efficiently demands a highly optimized software architecture that can operate independently on dedicated embedded hardware without exhausting system memory. 
 
 This paper bridges these computational gaps by focusing rigorously on the software optimization of sequence-based gesture recognition. We implement an 8-bit quantized LSTM model specifically engineered to run continuously and efficiently on a standalone Raspberry Pi 5. Unlike previous studies that predominantly highlight overall accuracy, this research provides a comprehensive machine learning evaluation, incorporating a detailed confusion matrix alongside Precision, Recall, and F1-Score metrics, to robustly validate the model's reliability, classification balance, and inference efficiency for smart home computational systems.
+
+

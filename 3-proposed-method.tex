@@ -26,7 +26,7 @@ The Raspberry Pi 5 serves as the central hub managing interaction flows for four
 
 \subsection{Gesture Vocabulary and Data Preprocessing}
 
-A comprehensive dataset was constructed involving 8 different subjects to capture natural human movement variability and develop a high-generalization model. Data acquisition was performed under diverse environmental conditions, including variations in lighting and non-uniform backgrounds to prevent model overfitting. The distance between the subject's hands and the camera was varied within a range of 40 cm to 60 cm. This proses resulted in a total of 1,998 samples, providing a balanced distribution for training and evaluation.
+A comprehensive dataset was constructed involving 8 different subjects to capture natural human movement variability and develop a high-generalization model. Data acquisition was performed under diverse environmental conditions, including variations in lighting and non-uniform backgrounds to prevent model overfitting \cite{yu2022diversity}. The distance between the subject's hands and the camera was varied within a range of 40 cm to 60 cm. This proses resulted in a total of 1,998 samples, providing a balanced distribution for training and evaluation.
 
 The system utilizes a 10-class physical gesture dataset mapped to 6 logical control commands to provide initial-state invariance. As detailed in Fig. \ref{fig:visual_gesture}, these gestures are represented as dynamic sequences of 30 frames, capturing the full temporal progression of each movement. The vocabulary is divided into two primary categories:
 
